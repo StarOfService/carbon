@@ -1,0 +1,28 @@
+dist: xenial
+
+language: go
+
+services:
+  - docker
+
+sudo: required
+
+before_install:
+  - sudo add-apt-repository -y ppa:alexlarsson/flatpak
+  - sudo apt-get update
+  - sudo apt-get install -y libglib2.0-dev libostree-dev libselinux1-dev libdevmapper-dev
+  - mv $GOPATH/src/github.com/StarOfService $GOPATH/src/github.com/starofservice
+  - sudo ln -s $(which go) /usr/local/bin/go
+
+script: sudo ./hack/travis-test.sh
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file:
+    - carbon-windows-amd64.exe
+    - carbon-linux-amd64
+    - carbon-darwin-amd64
+  skip_cleanup: true
+  on:
+    tags: true

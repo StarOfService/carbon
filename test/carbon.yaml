@@ -1,0 +1,20 @@
+apiVersion: v1alpha1
+dockerfile: Dockerfile
+kubeManifests: k8s/*.yaml
+name: carbon-test
+version: 0.0.1
+hooks:
+  pre-build:
+    - minikube version
+  post-build:
+    - hooks/build.sh
+variables:
+  - name: FullName
+    default: carbon-test
+  - name: Environment
+    default: local
+  - name: KubeNamespace
+    default: default
+  - name: Cluster
+    default: core
+    description: K8s cluster name

@@ -1,0 +1,14 @@
+{
+  "Enable": [
+    "deadcode",
+    "errcheck",
+    "gocyclo",
+    "golint",
+    "gosec",
+    "unconvert"
+  ],
+  "Exclude": [
+    "should have comment or be unexported"
+  ],
+  "Deadline": "120s"
+}

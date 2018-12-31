@@ -1,151 +1,163 @@
-// Copyright © 2018 NAME HERE <EMAIL ADDRESS>
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
-  // "fmt"
-  // "reflect"
-  "github.com/spf13/cobra"
   "io/ioutil"
-  // // "github.com/spf13/viper"
   "path/filepath"
 
-  // // "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
+  "github.com/docker/cli/opts"
+  "github.com/pkg/errors"
+  log "github.com/sirupsen/logrus"
+  "github.com/spf13/cobra"
+
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
-  "github.com/starofservice/carbon/pkg/kubernetes/manifest"
+  "github.com/starofservice/carbon/pkg/kubernetes"
+  "github.com/starofservice/carbon/pkg/minikube"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
-  // "github.com/starofservice/carbon/pkg/util"
 )
 
-var cfgFile string
+var BuildConfig string
+var BuildPush bool
+var BuildRemove bool
+var BuildTags []string
+var BuildTagPrefix string
+var BuildTagSuffix string
 
-// buildCmd represents the build command
+// https://github.com/docker/cli/blob/v18.06.2-ce/cli/command/image/build.go#L41-L75
+var BuildDockerBuildArg opts.ListOpts
+var BuildDockerLabel opts.ListOpts
+var BuildDockerNetwork string
+
 var buildCmd = &cobra.Command{
   Use:   "build",
-  Short: "A brief description of your command",
-  Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-  // Run: func(cmd *cobra.Command, args []string) {
-  //   fmt.Println("build called")
-  // },
-  Run: func(cmd *cobra.Command, args []string) {
-    runBuild()
+  Short: "Build Carbon package",
+  Long: `
+Builds a Carbon package based on the provided carbon.yaml config.`,
+  SilenceErrors: true,
+  Args: func(cmd *cobra.Command, args []string) error {
+    if len(args) != 0 {
+      return errors.New("This command doesn't use any arguments")
+    }
+    return nil
+  },
+  RunE: func(cmd *cobra.Command, args []string) error {
+    cmd.SilenceUsage = true
+    return errors.Wrap(runBuild(), "build")
   },
 }
 
 func init() {
+  BuildDockerBuildArg = opts.NewListOpts(opts.ValidateEnv)
+  BuildDockerLabel = opts.NewListOpts(opts.ValidateEnv)
+
   RootCmd.AddCommand(buildCmd)
 
-  // cobra.OnInitialize(initConfig)
+  buildCmd.Flags().StringVarP(&BuildConfig, "config", "c", "carbon.yaml", "config file (default is carbon.yaml)")
+  buildCmd.Flags().BoolVar(&BuildPush, "push", false, "Push built images to the repositories (disabled by default)")
+  buildCmd.Flags().BoolVar(&BuildRemove, "rm", false, "Remove build images after the push operation (disabled by default)")
+  buildCmd.Flags().StringArrayVar(&BuildTags, "tag", []string{}, "Name and optionally a tag in the 'name:tag' format. If tag isn't provided, it will be replaced by the component version from carbon.yaml")
+  buildCmd.Flags().StringVar(&BuildTagPrefix, "tag-prefix", "", "Prefix which should be added for all tags")
+  buildCmd.Flags().StringVar(&BuildTagSuffix, "tag-suffix", "", "Suffix which should be added for all tags")
 
-  buildCmd.Flags().StringVarP(&cfgFile, "config", "c", "carbon.yaml", "config file (default is carbon.yaml)")
-  // Here you will define your flags and configuration settings.
-
-  // Cobra supports Persistent Flags which will work for this command
-  // and all subcommands, e.g.:
-  // buildCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-  // Cobra supports local flags which will only run when this command
-  // is called directly, e.g.:
-  // buildCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+  buildCmd.Flags().Var(&BuildDockerBuildArg, "docker-build-arg", "Set build-time variables")
+  buildCmd.Flags().Var(&BuildDockerLabel, "docker-label", "Set metadata for an image")
+  buildCmd.Flags().StringVar(&BuildDockerNetwork, "docker-network", "default", "Set the networking mode for the RUN instructions during build (default 'default')")
 }
 
-// func initConfig() {
-//  if cfgFile != "" {
-//    viper.SetConfigFile("config.yaml")
-//  } else {
-//    // Use config file from the flag.
-//    viper.SetConfigFile(cfgFile)
+func runBuild() error {
+  log.Info("Starting Carbon build")
 
-//    // // Find home directory.
-//    // home, err := homedir.Dir()
-//    // if err != nil {
-//    //  fmt.Println(home)
-//    //  os.Exit(1)
-//    // }
-
-//    // // Search config in home directory with name ".cobra" (without extension).
-//    // viper.AddConfigPath(home)
-//    // viper.SetConfigName(".cobra")
-//  }
-
-//  viper.AutomaticEnv() // read in environment variables that match
-
-//  // If a config file is found, read it in.
-//  if err := viper.ReadInConfig(); err == nil {
-//    fmt.Println("Using config file:", viper.ConfigFileUsed())
-//  }
-// }
-
-func runBuild() {
-  cfgPath, err := filepath.Abs(cfgFile)
-  if err != nil {
-    panic(err.Error())
+  if BuildRemove && !BuildPush {
+    log.Warn("Images can be removed only when push is enabled (see --push option). Skipping it.")
+    BuildRemove = false
   }
-  // fmt.Println(cfgPath)
+
+  if minikube.Enabled && BuildPush {
+    log.Warn("Push can't be used with Minikube mode. Skipping it.")
+    BuildPush = false
+  }
+
+  log.Info("Reading Carbon config")
+  cfgPath, err := filepath.Abs(BuildConfig)
+  if err != nil {
+    return errors.Wrap(err, "looking for Carbon config")
+  }
+
   cfgBody, err := ioutil.ReadFile(cfgPath)
   if err != nil {
-    panic(err.Error())
+    return errors.Wrap(err, "reading Carbon config")
   }
 
-  cfg, err := rootcfg.ParseConfig(cfgBody)
+  cfg, err := pkgcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody)
   if err != nil {
-    panic(err.Error())
+    return errors.Wrap(err, "parsing Carbon config")
   }
-  // cfgB64 := util.EncodeMetadata(cfgBody)
-  // cfgB64 := pkgmeta.B64Encode(cfgBody)
 
+  if cfg.HookDefined(pkgcfg.HookPreBuild) {
+    log.Info("Running pre-build hook")
+    if err = cfg.RunHook(pkgcfg.HookPreBuild); err != nil {
+      return errors.Wrap(err, "running pre-biuld hooks")
+    }
+  }
 
-  kubeManif, err := manifest.ReadTemplates(cfg.KubeManifests)
+  kubeManif, err := kubernetes.ReadTemplates(cfg)
   if err != nil {
-    panic(err.Error())
+    return errors.Wrap(err, "reading Kubernetes manifest templates")
   }
-  // kubeManifB64 := pkgmeta.B64Encode(kubeManif)
 
   meta := pkgmeta.New(cfg, cfgBody, kubeManif)
 
-  kd, err := pkgmeta.NewKubeDeploy(meta)
+  kd, err := kubernetes.NewKubeInstall(meta, "image", "tag")
   if err != nil {
-    panic(err.Error())
+    return errors.Wrap(err, "creating new instance of KubeInstall")
   }
 
-  err = kd.Verify()
-  if err != nil {
-    panic(err.Error())
+  if err = kd.VerifyAll(cfg.Data.KubeManifests); err != nil {
+    return errors.Wrap(err, "verifying Kubernetes configs")
   }
 
-  metaMap, err := pkgmeta.Map(*meta)
+  metaMap, err := meta.Serialize()
   if err != nil {
-    panic(err.Error())
+    return errors.Wrap(err, "serializing Carbon config")
   }
 
-  // fmt.Println("cfg processed")
-  // fmt.Println(cfg.Dockerfile)
-  // fmt.Println(filepath.Dir(cfgPath))
-  // fmt.Println(reflect.TypeOf(cfg.Artifacts))
-  // fmt.Println(cfg.Artifacts)
+  log.Info("Building Carbon package")
+  dockerBuild, err := dockerbuild.NewOptions(cfg, filepath.Dir(cfgPath))
+  if err != nil {
+    return errors.Wrap(err, "creating Docker build handler")
+  }
+  
+  if err = dockerBuild.ExtendTags(BuildTags, BuildTagPrefix, BuildTagSuffix); err != nil {
+    return errors.Wrap(err, "extending tags")
+  }
 
-  // fmt.Println(cfg)
-  // fmt.Println(metaMap)
+  dockerBuild.DockerBuildArgs = opts.ConvertKVStringsToMapWithNil(BuildDockerBuildArg.GetAll())
+  dockerBuild.DockerNetworkMode = BuildDockerNetwork
 
-  bo := dockerbuild.NewBuildOptions()
-  bo.Build(cfg, filepath.Dir(cfgPath), metaMap)
-  // fmt.Println("docker build processed")
+  dockerBuild.DockerLabels = opts.ConvertKVStringsToMap(BuildDockerLabel.GetAll())
+  dockerBuild.AddCarbonMetadata(metaMap)
 
+  if err = dockerBuild.Build(); err != nil {
+    return errors.Wrap(err, "building Carbon package")
+  }
+
+  if cfg.HookDefined(pkgcfg.HookPostBuild) {
+    log.Info("Running post-build hook")
+    if err = cfg.RunHook(pkgcfg.HookPostBuild); err != nil {
+      return errors.Wrap(err, "running post-biuld hooks")
+    }
+  }
+
+  if BuildPush {
+    log.Info("Pushing built Docker images")
+    dockerBuild.Push()
+  }
+
+  if BuildRemove {
+    log.Info("Removing built images")
+    dockerBuild.Remove()
+  }
+
+  log.Info("Carbon package has been built successfully")
+  return nil
 }

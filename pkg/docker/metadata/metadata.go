@@ -1,72 +1,71 @@
-package metadata  
+package metadata
 
 import (
   "context"
-  // "encoding/base64"
-  "fmt"  
-  // "strings"
-  
-  // "github.com/aws/aws-sdk-go/aws/awserr"
-  // "github.com/aws/aws-sdk-go/aws/session"
-  // "github.com/aws/aws-sdk-go/service/ecr"
+  "strings"
+
   "github.com/containers/image/transports/alltransports"
   "github.com/containers/image/types"
   "github.com/docker/cli/cli/config"
-  "github.com/docker/docker/pkg/term"
   "github.com/docker/distribution/reference"
-
+  "github.com/docker/docker/client"
+  "github.com/docker/docker/pkg/term"
+  "github.com/pkg/errors"
+  log "github.com/sirupsen/logrus"
 )
 
 const (
-//   awsEcrDomainSuffix = "amazonaws.com"
   kubeImageOS = "linux"
 )
 
-// TODO: provide possibility to provide credentials with parameters
+var SkipTLSVerify = false
 
-// TODO: remove
-func Get() { 
-
-  // 1) check local repo || force remote
-  // 2) parse remot url
-
-  // labels := make(map[string]string)
-  // _, _ = GetLabels("abcdefg:latest")
-  // // fmt.Println(labels)
-  // _, _ = GetLabels("abcdefg111:latest")
-  // _, _ = GetLabels("abcdefg111")
-  // // fmt.Println(labels)
-  // labels, _ := GetLabels("docker://fedora:latest")
-
-  labels, err := GetLabels("docker://727466838232.dkr.ecr.eu-west-1.amazonaws.com/aquila:2.0.0.2")
-  // labels, _ := GetLabels("docker://starof/apache:latest")
-  // labels, _ := GetLabels("docker://registry.starofservice.com/docker/apache:latest")
-  if err != nil {
-    fmt.Println(err.Error())
-    return
-  }
-  fmt.Println(labels)
+type DockerMeta struct {
+  image string
+  ref types.ImageReference
 }
 
-
-func GetLabels(name string) (map[string]string, error) {
-  ref, err := alltransports.ParseImageName(name)
-  if err != nil {
-    panic(err)
+func NewDockerMeta(image string) (*DockerMeta, error) {
+  imagePrefixed := image
+  if !strings.HasPrefix("docker://", image) {
+    imagePrefixed = "docker://" + image
   }
 
-  ctx := context.Background()
+  ref, err := alltransports.ParseImageName(imagePrefixed)
+  if err != nil {
+    return nil, errors.Wrap(err, "parsing image name")
+  }
+
+  self := &DockerMeta{
+    image: image,
+    ref: ref,
+  }
+
+  return self, nil
+}
+
+func (self *DockerMeta) GetLabels() (map[string]string, error) {
+  log.Debug("Getting dokcer image labels")
+
+  log.Debug("Trying to receive the lables from a locally avaiable image")
+  resp, err := self.getLocalImageLabels()
+  if err == nil {
+    return resp, nil
+  }
+  log.Debug("Got an error: ", err.Error())
+
   sys := &types.SystemContext{
     OSChoice: kubeImageOS,
+    DockerInsecureSkipTLSVerify: types.NewOptionalBool(SkipTLSVerify),
   }
 
-  // Trying to get metadata without authentication for public repo
-  resp, err := getMetadataLabels(ctx, sys, ref)
+  log.Debug("Trying to receive the lables without authentication for a public repo")
+  resp, err = self.getRemoteMetaLabels(sys)
   if err == nil {
     return resp, nil
   }
 
-  username, password, err := getCredentials(reference.Domain(ref.DockerReference()))
+  username, password, err := self.GetCredentials()
   if err != nil {
     return nil, err
   }
@@ -76,82 +75,75 @@ func GetLabels(name string) (map[string]string, error) {
     Password: password,
   }
 
-  resp, err = getMetadataLabels(ctx, sys, ref)
+  resp, err = self.getRemoteMetaLabels(sys)
   if err != nil {
-    return nil, fmt.Errorf("Unable to get image labels due to the error: %s", err.Error())
+    return nil, errors.Wrapf(err, "getting Carbon metadata for a repository '%s'", self.Name())
   }
 
   return resp, nil
 }
 
+func (self *DockerMeta) Domain() string {
+  return reference.Domain(self.dockerReference())
+}
 
+func (self *DockerMeta) Name() string {
+  return self.dockerReference().Name()
+}
 
-func getMetadataLabels(ctx context.Context, sys *types.SystemContext, ref types.ImageReference) (map[string]string, error) {
-  img, err := ref.NewImage(ctx, sys)
+func (self *DockerMeta) Tag() string {
+  return self.dockerReference().Tag()
+}
+
+func (self *DockerMeta) dockerReference() reference.NamedTagged {
+  return self.ref.DockerReference().(reference.NamedTagged)
+}
+
+func (self *DockerMeta) getLocalImageLabels() (map[string]string, error) {
+  cli, err := client.NewEnvClient()
   if err != nil {
+    return nil, errors.Wrap(err, "creating Docker client")
+  }
+  ctx := context.Background()
+
+  element, _, err := cli.ImageInspectWithRaw(ctx, self.image)
+  if err != nil {
+    return nil, err
+  }
+  return element.Config.Labels, nil
+}
+
+func (self *DockerMeta) getRemoteMetaLabels(sys *types.SystemContext) (map[string]string, error) {
+  ctx := context.Background()
+
+  img, err := self.ref.NewImage(ctx, sys)
+  if err != nil {
+    log.Debugf("Failed to create an image handler due to the error: %s", err.Error())
     return nil, err
   }
 
   imgInspect, err := img.Inspect(ctx)
   if err != nil {
+    log.Debugf("Failed to receive a Docker image metadata due to the error: %s", err.Error())
     return nil, err
   }
 
   return imgInspect.Labels, nil
 }
 
-func getCredentials(registry string) (string, string, error) {
-  // if strings.HasSuffix(registry, awsEcrDomainSuffix) {
-  //   return getCredentialsAws(registry)
-  // }
+func (self *DockerMeta) GetCredentials() (string, string, error) {
+  registry := self.Domain()
+
   _, _, stderr := term.StdStreams()
   dockerConfig := config.LoadDefaultConfigFile(stderr)
   creds, err := dockerConfig.GetAuthConfig(registry)
   if err != nil {
-    return "", "", fmt.Errorf("Failed to extract docker crednetials due to the error: %s", err.Error())
+      return "", "", errors.Wrapf(err, "extracting Docker credentials for a repository '%s'", self.Name())
   }
 
   if len(creds.Username) == 0 || len(creds.Password) == 0 {
-    return "", "", fmt.Errorf("Got empty docker username or password")
+    return "", "", errors.Errorf("Got an empty Docker username or password for a repository '%s'", self.Name())
   }
 
   return creds.Username, creds.Password, nil
 }
-
-// func getCredentialsAws(registry string) (string, string, error) {
-//   svc := ecr.New(session.New())
-  
-//   input := &ecr.GetAuthorizationTokenInput{}
-//   result, err := svc.GetAuthorizationToken(input)
-  
-//   if err != nil {
-//     if aerr, ok := err.(awserr.Error); ok {
-//       switch aerr.Code() {
-//       case ecr.ErrCodeServerException:
-//         fmt.Println(ecr.ErrCodeServerException, aerr.Error())
-//       case ecr.ErrCodeInvalidParameterException:
-//         fmt.Println(ecr.ErrCodeInvalidParameterException, aerr.Error())
-//       default:
-//         fmt.Println(aerr.Error())
-//       }
-//     } else {
-//       // Print the error, cast err to awserr.Error to get the Code and
-//       // Message from an error.
-//       fmt.Println(err.Error())
-//     }
-//     // return
-//   }
-//   authToken := result.AuthorizationData[0].AuthorizationToken
-//   tokenB64Decoded, err := base64.StdEncoding.DecodeString(*authToken)
-//   if err != nil {
-//     return "", "", fmt.Errorf("Unable to decode string `%s` due to the error: %s", *authToken, err.Error())
-//   }
-
-//   del := strings.Index(string(tokenB64Decoded), ":")
-//   if del == -1 {
-//     return "", "", fmt.Errorf("Got an invalid baseauth token. The Base64 encoded string doesn't contain colon: %s", tokenB64Decoded)
-//   }
-
-//   username, password := string(tokenB64Decoded[:del]), string(tokenB64Decoded[del+1:])
-//   return username, password, nil
-// }
