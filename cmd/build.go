@@ -18,15 +18,19 @@ import (
   // "reflect"
   "github.com/spf13/cobra"
   "io/ioutil"
+  "os"
+
   // // "github.com/spf13/viper"
   "path/filepath"
 
   // // "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
   "github.com/starofservice/carbon/pkg/schema/rootcfg"
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
-  "github.com/starofservice/carbon/pkg/kubernetes/manifest"
+  // "github.com/starofservice/carbon/pkg/kubernetes/manifest"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
+  "github.com/starofservice/carbon/pkg/kubernetes"
   // "github.com/starofservice/carbon/pkg/util"
+  log "github.com/sirupsen/logrus"
 )
 
 var cfgFile string
@@ -94,45 +98,66 @@ func init() {
 // }
 
 func runBuild() {
+  log.Info("Starting Carbon build")
+
+  log.Info("Reading Carbon config")
   cfgPath, err := filepath.Abs(cfgFile)
   if err != nil {
-    panic(err.Error())
+    log.Fatalf("Failed to find Carbon config due to the error: %s", err.Error())
+    os.Exit(1)
+    // panic(err.Error())
   }
   // fmt.Println(cfgPath)
   cfgBody, err := ioutil.ReadFile(cfgPath)
   if err != nil {
-    panic(err.Error())
+    // panic(err.Error())
+    log.Fatalf("Failed to read Carbon config due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
   cfg, err := rootcfg.ParseConfig(cfgBody)
   if err != nil {
-    panic(err.Error())
+    // panic(err.Error())
+    log.Fatalf("Failed to parse Carbon config due to the error: %s", err.Error())
+    os.Exit(1)
   }
   // cfgB64 := util.EncodeMetadata(cfgBody)
   // cfgB64 := pkgmeta.B64Encode(cfgBody)
 
 
-  kubeManif, err := manifest.ReadTemplates(cfg.KubeManifests)
+  kubeManif, err := kubernetes.ReadTemplates(cfg.KubeManifests)
   if err != nil {
-    panic(err.Error())
+    // panic(err.Error())
+    log.Fatalf("Failed to read Kubernetes configs due to the error: %s", err.Error())
+    os.Exit(1)
   }
   // kubeManifB64 := pkgmeta.B64Encode(kubeManif)
 
   meta := pkgmeta.New(cfg, cfgBody, kubeManif)
 
-  kd, err := pkgmeta.NewKubeDeploy(meta)
+  // fmt.Println(meta.Variables)
+
+  kd, err := kubernetes.NewKubeDeployment(meta, "image", "tag")
   if err != nil {
-    panic(err.Error())
+    // panic(err.Error())
+    log.Fatalf("Failed to create new instance of KubeDeploy due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
-  err = kd.Verify()
+  err = kd.VerifyAll(cfg.KubeManifests)
   if err != nil {
-    panic(err.Error())
+    // panic(err.Error())
+    log.Fatalf("Failed to verify Kubernetes configs due to the error: %s", err.Error())
+    // fmt.Println(err.Error())
+    os.Exit(1)
+
   }
 
-  metaMap, err := pkgmeta.Map(*meta)
+  metaMap, err := pkgmeta.SerializeMeta(*meta)
   if err != nil {
-    panic(err.Error())
+    // panic(err.Error())
+    log.Fatalf("Failed to serialize Carbon config due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
   // fmt.Println("cfg processed")
@@ -144,8 +169,9 @@ func runBuild() {
   // fmt.Println(cfg)
   // fmt.Println(metaMap)
 
+  log.Info("Building Carbon package")
   bo := dockerbuild.NewBuildOptions()
   bo.Build(cfg, filepath.Dir(cfgPath), metaMap)
   // fmt.Println("docker build processed")
-
+  log.Info("Carbon package has been built successfully")
 }

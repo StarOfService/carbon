@@ -5,6 +5,7 @@ import (
   // "fmt"
   "gopkg.in/yaml.v2"
   // "io/ioutil"
+  log "github.com/sirupsen/logrus"
 
   "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
   "github.com/starofservice/carbon/pkg/schema/rootcfg/util"
@@ -55,6 +56,8 @@ func (v *versions) Find(apiVersion string) (func() util.VersionedConfig, bool) {
 
 // ParseConfig reads a configuration file.
 func ParseConfig(cfgBody []byte) (*latest.CarbonConfig, error) {
+  log.Debug("Processing Carbon config")
+
   apiVersion := &APIVersion{}
   if err := yaml.Unmarshal(cfgBody, apiVersion); err != nil {
     return nil, errors.Wrap(err, "parsing api version")

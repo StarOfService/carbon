@@ -16,12 +16,27 @@ package cmd
 import (
   // "fmt"
   // "strings"
+  "io/ioutil"
+  "os"
 
   "github.com/spf13/cobra"
 
-  // dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
-  // "github.com/starofservice/carbon/pkg/schema/pkgmeta"
+
+  // "github.com/starofservice/carbon/pkg/util/argparser"
+  "github.com/starofservice/carbon/pkg/variables"
+  dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
+  "github.com/starofservice/carbon/pkg/schema/pkgmeta"
+  // pkgmetalatest "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
+  "github.com/starofservice/carbon/pkg/kubernetes"
+  log "github.com/sirupsen/logrus"
+  "github.com/starofservice/carbon/pkg/util/tojson"
 )
+
+var buildVars []string
+var buildVarFiles []string
+var buildPatches []string
+var buildPatchFiles []string
+var buildDefaultPWL bool
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
@@ -53,8 +68,11 @@ to quickly create a Cobra application.`,
 func init() {
   RootCmd.AddCommand(deployCmd)
 
-
-
+  deployCmd.Flags().StringArrayVar(&buildVars, "var", []string{}, "Define a value for a package variable")
+  deployCmd.Flags().StringArrayVar(&buildVarFiles, "var-file", []string{}, "Define file with values for a package variables")
+  deployCmd.Flags().StringArrayVar(&buildPatches, "patch", []string{}, "Apply directly typed patch for the manifest")
+  deployCmd.Flags().StringArrayVar(&buildPatchFiles, "patch-file", []string{}, "Apply patch from a file for the manifest")
+  deployCmd.Flags().BoolVar(&buildDefaultPWL, "default-prune-white-list", false, "Use the default prune white-list for the kubect apply operation. Enabling this option speeds-up deployment, but not all resource versions are pruned")
 
   // Here you will define your flags and configuration settings.
 
@@ -68,7 +86,141 @@ func init() {
 }
 
 func runDeploy(image string) {
+  log.Info("Starting Carbon deploy")
+
+  vars := parseVars()
+  patches := parsePatches()
+  
+
   // var image string // should be replaced by input data
   // labels, err := dockermeta.GetLabels(image)
-  // meta, err := pkgmeta.ParseMetadata(labels)
+  log.Info("Getting carbon package metadata")
+  dm := dockermeta.NewDockerMeta(image)
+  labels := dm.GetLabels()
+  // if err != nil {
+  //   // panic(err.Error())
+  //   log.Fatal("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
+  //   os.Exit(1)
+  // }
+
+  meta, err := pkgmeta.DeserializeMeta(labels)
+  if err != nil {
+    // panic(err.Error())
+    log.Fatalf("Failed to deserialize Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
+    os.Exit(1)
+  }
+
+  kd, err := kubernetes.NewKubeDeployment(meta, dm.Name(), dm.Tag())
+  if err != nil {
+    // panic(err.Error())
+    log.Fatalf("Failed to create new instance of KubeDeploy due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+
+  kd.UpdateVars(vars)
+
+  log.Info("Building kubernetes configuration")
+  kd.Build()
+  // if err != nil {
+  //   // panic(err.Error())
+  //   log.Fatal("Failed to build kubernetes configuration due to the error: %s", err.Error())
+  //   os.Exit(1)
+  // }
+
+  log.Info("Applying patches")
+  // var patches [][]byte
+  err = kd.ProcessPatches(patches)
+  if err != nil {
+    // panic(err.Error())
+    log.Fatalf("Failed to apply user patches for kubernetes resources due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+
+
+
+  err = kd.SetAppLabel()
+  if err != nil {
+    // panic(err.Error())
+    log.Fatalf("Failed to apply Carbon labels for kubernetes resources due to the error: %s", err.Error())
+    os.Exit(1) 
+  }
+
+
+
+  log.Info("Applying kubernetes configuration")
+  // fmt.Println(string(kd.BuiltManifest))
+  err = kd.Apply(buildDefaultPWL)
+  if err != nil {
+    // panic(err.Error())
+    log.Fatalf("Failed to apply Kubernetes configuration due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+  log.Info("Carbon package has been deployed successfully")
+}
+
+func parseVars() map[string]string {
+  log.Debug("Parsing variables")
+
+  vars := variables.NewVars()
+  vars.ParseVarFiles(buildVarFiles)
+  vars.ParseFlags(buildVars)
+  
+  return vars.Data
+}
+
+// func parsePatches() [][]byte {
+//   log.Debug("Parsing patches")
+//   // if len(buildPatches) > 0 && len(buildPatchFiles) > 0 {
+//   //   fmt.Prinln("`patch` and `patch-file` parameters can't be used at the same time")
+//   //   os.Exit(1)
+//   // }
+//   var patches [][]byte
+//   for _, i := range buildPatchFiles {
+//     d, err := ioutil.ReadFile(i)
+//     if err != nil {
+//       // panic(err.Error())
+//       log.Fatalf("Failed to read a patch file '%s', due to the error: '%s'. Skipping it.", i, err.Error())
+//       os.Exit(1)
+//       // continue
+//     }
+//     patches = append(patches, d)
+//   }
+
+//   for _, i := range buildPatches {
+//     patches = append(patches, []byte(i))
+//   }
+
+//   return patches
+// }
+
+
+func parsePatches() []byte {
+  log.Debug("Parsing patches")
+  // if len(buildPatches) > 0 && len(buildPatchFiles) > 0 {
+  //   fmt.Prinln("`patch` and `patch-file` parameters can't be used at the same time")
+  //   os.Exit(1)
+  // }
+  var rawPatches [][]byte
+  for _, i := range buildPatchFiles {
+    d, err := ioutil.ReadFile(i)
+    if err != nil {
+      // panic(err.Error())
+      log.Fatalf("Failed to read a patch file '%s', due to the error: '%s'. Skipping it.", i, err.Error())
+      os.Exit(1)
+      // continue
+    }
+    rawPatches = append(rawPatches, d)
+  }
+
+  for _, i := range buildPatches {
+    rawPatches = append(rawPatches, []byte(i))
+  }
+
+  var resp []byte
+  for _, i := range rawPatches {
+    ni := tojson.ToJson(i)
+    resp = append(resp, ni...)
+  }
+
+  return resp
 }

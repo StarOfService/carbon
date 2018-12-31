@@ -24,6 +24,11 @@
 #   go-tests = true
 #   unused-packages = true
 
+[prune]
+  non-go = true
+  go-tests = true
+  unused-packages = true
+
 [[constraint]]
   name = "github.com/docker/cli"
   version = "v18.06.1-ce"
@@ -32,8 +37,6 @@
   name = "github.com/docker/docker"
   source = "https://github.com/docker/engine.git"
   version = "v18.06.1-ce"
-#  version = "v17.05.0-ce"
-#  revision = "89658bed64c2a8fe05a978e5b87dbec409d57a0f"
 
 # required for github.com/docker/docker
 [[override]]
@@ -52,6 +55,21 @@
   name = "gopkg.in/yaml.v2"
   version = "2.2.1"
 
-[prune]
-  go-tests = true
-  unused-packages = true
+[[constraint]]
+  name = "k8s.io/kubernetes"
+  version = "~1.13.1"
+
+[[override]]
+  name = "k8s.io/apiserver"
+  #version = "kubernetes-1.13.1"
+  revision = "3ccfe8365421eb08e334b195786a2973460741d8"
+
+[[override]]
+  name = "k8s.io/apiextensions-apiserver"
+  #version = "kubernetes-1.13.1"
+  revision = "0fe22c71c47604641d9aa352c785b7912c200562"
+
+# Required for k8s.io/kubernetes
+[[override]]
+  name = "github.com/russross/blackfriday"
+  version = "~v1.5.2"

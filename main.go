@@ -13,7 +13,13 @@
 
 package main
 
-import "github.com/starofservice/carbon/cmd"
+import (
+  "github.com/starofservice/carbon/cmd"
+)
+
+// func init() {
+
+// }
 
 func main() {
   cmd.Execute()

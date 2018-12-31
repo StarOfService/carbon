@@ -6,6 +6,8 @@ import (
   "strings"
   "os"
 
+  log "github.com/sirupsen/logrus"
+
   clibuild "github.com/docker/cli/cli/command/image/build"
   "github.com/docker/docker/api/types"
   "github.com/docker/docker/client"
@@ -34,9 +36,12 @@ func NewBuildOptions() *BuildOptions {
 }
 
 func (o *BuildOptions) Build(cfg *rootcfglatest.CarbonConfig, ctxPath string, metadata map[string]string) {
+  log.Debug("Building docker image")
+
   excludes, err := clibuild.ReadDockerignore(ctxPath)
   if err != nil {
-    panic(err)
+    log.Fatalf("Failed to read Dockerignore file due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
   // if err := build.ValidateContextDirectory(contextDir, excludes); err != nil {
@@ -50,20 +55,15 @@ func (o *BuildOptions) Build(cfg *rootcfglatest.CarbonConfig, ctxPath string, me
 
   excludes = clibuild.TrimBuildFilesFromExcludes(excludes, cfg.Dockerfile, false)
 
-  // ctx, _ := archive.TarWithOptions(ctxPath, &archive.TarOptions{
-  //   ExcludePatterns: excludes,
-  //   ChownOpts:       &archive.TarOptions{UID: 0, GID: 0},
-  // })
-
   ctx, err := archive.TarWithOptions(ctxPath, &archive.TarOptions{
     ExcludePatterns: excludes,
     ChownOpts:       &idtools.Identity{UID: 0, GID: 0},
   })
   if err != nil {
-    panic(err)
+    log.Fatalf("Failed to create Docker build context due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
-  // fmt.Println(labels)
   // https://github.com/docker/engine/blob/v18.09.0/api/types/client.go#L143-L190
   opt := types.ImageBuildOptions{
     // BuildArgs:   args,
@@ -77,22 +77,37 @@ func (o *BuildOptions) Build(cfg *rootcfglatest.CarbonConfig, ctxPath string, me
     Tags:        buildOptionsTags(cfg),
   }
 
+  if suppressOutput() {
+    opt.SuppressOutput = true  
+  }
     
   cli, err := client.NewEnvClient()
   if err != nil {
-    panic(err)
+    log.Fatalf("Failed to create Docker client due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
   response, err := cli.ImageBuild(context.Background(), ctx, opt)
   if err != nil {
-    // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L405-L411 
-    panic(err)
+    // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L405-L411
+    log.Fatalf("Failed to build Docker image due to the error: %s", err.Error())
+    os.Exit(1)
   }
 
   defer response.Body.Close()
 
   termFd, isTerm := term.GetFdInfo(os.Stderr)
   jsonmessage.DisplayJSONMessagesStream(response.Body, os.Stderr, termFd, isTerm, nil)
+}
+
+func suppressOutput() bool {
+  logLevel := log.GetLevel().String()
+  // if logLevel == "warning" || logLevel == "error" || logLevel == "fatal" || logLevel == "panic" {
+  switch logLevel {
+  case "warning", "error", "fatal", "panic":
+    return true
+  }
+  return false
 }
 
 func buildOptionsTags(cfg *rootcfglatest.CarbonConfig) []string {

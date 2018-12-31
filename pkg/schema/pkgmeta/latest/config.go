@@ -8,6 +8,12 @@ import (
 
 const Version string = "v1alpha1"
 
+// type PackageConfigKubeManifest struct {
+//   Filename string
+//   DataB64  string
+//   Format   string
+// }
+
 type PackageConfigVariable struct {
   Name        string
   Default     string
@@ -21,6 +27,7 @@ type PackageConfig struct {
   BuildTime     int64
   MainConfigB64 string
   KubeConfigB64 string
+  // KubeManifests []PackageConfigKubeManifest
   Variables     []PackageConfigVariable
 }
 
