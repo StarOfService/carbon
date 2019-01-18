@@ -21,6 +21,9 @@ import (
   "github.com/spf13/cobra"
   log "github.com/sirupsen/logrus"
   // "github.com/spf13/viper"
+
+  // "github.com/starofservice/carbon/cmd/deploy"
+  // "github.com/starofservice/carbon/cmd/status"
 )
 
 // var cfgFile string
@@ -75,6 +78,8 @@ func Execute() {
 
 func init() {
   RootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Set the logging level ('trace'|'debug'|'info'|'warn'|'error'|'fatal') (default 'info')")
+
+
   // cobra.OnInitialize(initConfig)
 
   // // Here you will define your flags and configuration settings.

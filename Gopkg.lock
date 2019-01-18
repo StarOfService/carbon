@@ -105,6 +105,14 @@
   revision = "3a771d992973f24aa725d07868b467d1ddfceafb"
 
 [[projects]]
+  digest = "1:aba270497eb2d49f5cba6f4162d524b9a1195a24cbce8be20bf56a0051f47deb"
+  name = "github.com/blang/semver"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "2ee87856327ba09384cabd113bc6b5d174e9ec0f"
+  version = "v3.5.1"
+
+[[projects]]
   digest = "1:a12d94258c5298ead75e142e8001224bf029f302fed9e96cd39c0eaf90f3954d"
   name = "github.com/boltdb/bolt"
   packages = ["."]
@@ -616,6 +624,14 @@
   revision = "60711f1a8329503b04e1c88535f419d0bb440bff"
 
 [[projects]]
+  digest = "1:70ef8268170621826f8c111ac1674afe75136f526f449453b4a6631c6dba1946"
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "3ee7d812e62a0804a7d0a324e0249ca2db3476d3"
+  version = "v0.0.4"
+
+[[projects]]
   digest = "1:d0164259ed17929689df11205194d80288e8ae25351778f7a3421a24774c36f8"
   name = "github.com/mattn/go-shellwords"
   packages = ["."]
@@ -662,6 +678,14 @@
   pruneopts = "NUT"
   revision = "4b7aa43c6742a2c18fdef89dd197aaae7dac7ccd"
   version = "1.0.1"
+
+[[projects]]
+  digest = "1:a37f6e86e990987d8b1b7642dd1b9763d914cb9bc862d493bae7b53158ac4b27"
+  name = "github.com/olekukonko/tablewriter"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "e6d60cf7ba1f42d86d54cdf5508611c4aafb3970"
+  version = "v0.0.1"
 
 [[projects]]
   digest = "1:e0cc8395ea893c898ff5eb0850f4d9851c1f57c78c232304a026379a47a552d0"
@@ -833,14 +857,6 @@
   pruneopts = "NUT"
   revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
   version = "v1.0.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:9b485f23e5272238e8c76fd9fb648f6693e099c3303d97a92b5092bf63b2d479"
-  name = "github.com/starofservice/flapper"
-  packages = ["."]
-  pruneopts = "NUT"
-  revision = "5856559a7cbb7078f9e3a1bcebf03c686a84ee73"
 
 [[projects]]
   branch = "master"
@@ -1317,6 +1333,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Jeffail/gabs",
+    "github.com/blang/semver",
     "github.com/containers/image/transports/alltransports",
     "github.com/containers/image/types",
     "github.com/docker/cli/cli/command/image/build",
@@ -1331,13 +1348,18 @@
     "github.com/evanphx/json-patch",
     "github.com/ghodss/yaml",
     "github.com/magiconair/properties",
+    "github.com/olekukonko/tablewriter",
     "github.com/pkg/errors",
     "github.com/rhysd/go-fakeio",
+    "github.com/sirupsen/logrus",
     "github.com/spf13/cobra",
-    "github.com/starofservice/flapper",
     "gopkg.in/yaml.v2",
+    "k8s.io/api/core/v1",
+    "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/cli-runtime/pkg/genericclioptions",
     "k8s.io/client-go/discovery",
+    "k8s.io/client-go/kubernetes/typed/core/v1",
+    "k8s.io/client-go/rest",
     "k8s.io/client-go/tools/clientcmd",
     "k8s.io/kubernetes/pkg/kubectl/cmd/apply",
     "k8s.io/kubernetes/pkg/kubectl/cmd/util",

@@ -7,76 +7,99 @@ import (
   // "io/ioutil"
   log "github.com/sirupsen/logrus"
 
+  "github.com/starofservice/carbon/pkg/util/command"
   "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg/util"
+  // "github.com/starofservice/carbon/pkg/schema/rootcfg/util"
+  "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
-// type MainConfigVersion struct {
-//   apiVersion string
-// }
-
-type APIVersion struct {
-  Version string `yaml:"apiVersion"`
+var schemaVersions = map[string]func() versioned.VersionedConfig{
+  latest.Version: latest.NewCarbonConfig,
 }
 
-var schemaVersions = versions{
-  // {v1alpha1.Version, v1alpha1.NewCarbonConfig},
-  {latest.Version, latest.NewCarbonConfig},
-}
+const (
+  HookPreBuild = "pre-build"
+  HookPostBuild = "post-build"
+)
 
-type version struct {
-  apiVersion string
-  factory    func() util.VersionedConfig
-}
-
-type versions []version
-
-// Find search the constructor for a given api version.
-func (v *versions) Find(apiVersion string) (func() util.VersionedConfig, bool) {
-  for _, version := range *v {
-    if version.apiVersion == apiVersion {
-      return version.factory, true
-    }
+func GetCurrentVersion(data []byte) (string, error) {
+  type APIVersion struct {
+    Version string `yaml:"apiVersion"`
   }
-
-  return nil, false
+  apiVersion := &APIVersion{}
+  if err := yaml.Unmarshal(data, apiVersion); err != nil {
+    return "", errors.Wrap(err, "parsing api version")
+  }
+  return apiVersion.Version, nil
 }
 
-// func ParseConfigPath(cfgPath string) (*latest.CarbonConfig, error) {
-//   // buf, err := misc.ReadConfiguration(filename)
-//   // if err != nil {
-//   //   return nil, errors.Wrap(err, "read skaffold config")
-//   // }
-//   cfgBody, err := ioutil.ReadFile(cfgPath)
-//   if err != nil {
-//     // log.Fatal(err)
-//   }
-//   return ParseConfig
-// }
+type CarbonConfig struct {
+ Data latest.CarbonConfig
+}
 
-// ParseConfig reads a configuration file.
-func ParseConfig(cfgBody []byte) (*latest.CarbonConfig, error) {
+func ParseConfig(data []byte) (*CarbonConfig, error) {
   log.Debug("Processing Carbon config")
 
-  apiVersion := &APIVersion{}
-  if err := yaml.Unmarshal(cfgBody, apiVersion); err != nil {
-    return nil, errors.Wrap(err, "parsing api version")
+  current, err := GetCurrentVersion(data)
+  if err != nil {
+    return nil, err
   }
 
-  factory, present := schemaVersions.Find(apiVersion.Version)
-  if !present {
-    return nil, errors.Errorf("unknown api version: '%s'", apiVersion.Version)
+  sh := versioned.NewSchemaHandler(current, latest.Version)
+  for k, v := range schemaVersions {
+    sh.RegVersion(k, v)
   }
 
-  cfg := factory()
-  if err := cfg.Parse(cfgBody); err != nil {
-    return nil, errors.Wrap(err, "unable to parse config")
+  cfg, err := sh.GetLatestConfig(data)
+  if err != nil {
+    return nil, err
   }
-
-  // if err := yamltags.ProcessStruct(cfg); err != nil {
-  //   return nil, errors.Wrap(err, "invalid config")
-  // }
 
   parsedCfg := cfg.(*latest.CarbonConfig)
-  return parsedCfg, nil
+  pc := &CarbonConfig{
+    Data: *parsedCfg,
+  }
+  return pc, nil
+}
+
+func (self *CarbonConfig) HookDefined(hookType string) bool {
+  switch hookType {
+  case HookPreBuild:
+    if len(self.Data.Hooks.PreBuild) > 0 {
+      return true
+    } else {
+      return false
+    }
+  case HookPostBuild:
+    if len(self.Data.Hooks.PostBuild) > 0 {
+      return true
+    } else {
+      return false
+    }
+  default:
+    return false
+  }
+}
+
+func (self *CarbonConfig) RunHook(hookType string) error {
+  var cmds []string
+  switch hookType {
+  case HookPreBuild:
+    cmds = self.Data.Hooks.PreBuild
+  case HookPostBuild:
+    cmds = self.Data.Hooks.PostBuild
+  default:
+    // return fmt.Errorf("Unsupported hook type: %s", hookType)
+    return errors.Errorf("Unsupported hook type: %s", hookType)
+  }
+  for _, i := range cmds {
+    err := command.Run(i)
+    if err != nil {
+      return err
+      // return errors.Wrapf(err, "command %s", i)
+      // return fmt.Errorf("Failed to run command '%s' due to the error: %s", i, err.Error())
+
+    }
+  }
+  return nil
 }

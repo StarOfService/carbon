@@ -14,29 +14,33 @@
 package cmd
 
 import (
-  // "fmt"
+  "fmt"
   // "strings"
   "io/ioutil"
   "os"
 
   "github.com/spf13/cobra"
-
+  "github.com/pkg/errors"
 
   // "github.com/starofservice/carbon/pkg/util/argparser"
   "github.com/starofservice/carbon/pkg/variables"
   dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
+  "github.com/starofservice/carbon/pkg/schema/kubemeta"
   // pkgmetalatest "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
   "github.com/starofservice/carbon/pkg/kubernetes"
   log "github.com/sirupsen/logrus"
   "github.com/starofservice/carbon/pkg/util/tojson"
+  "github.com/starofservice/carbon/pkg/util/homedir"
 )
 
-var buildVars []string
-var buildVarFiles []string
-var buildPatches []string
-var buildPatchFiles []string
-var buildDefaultPWL bool
+var deployVarFlags []string
+var deployVarFiles []string
+var deployPatches []string
+var deployPatchFiles []string
+var deployDefaultPWL bool
+var deployNamespace string
+var deployMetadataNamespace string
 
 // deployCmd represents the deploy command
 var deployCmd = &cobra.Command{
@@ -48,19 +52,16 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-  // Args: func(cmd *cobra.Command, args []string) {
-  //   if len(args) != 1 {
-  //     return fmt.Errorf("Currently only one argument is sapported")
-  //   }
-  //   if strings.Index(args[0], "://") != -1 {
-  //     return fmt.Errorf("Image must not contain any schema like http:// or https://") 
-  //   }
-  //   if len(strings.Split(args[0], ":")) != 2 {
-  //     return fmt.Errorf("Image must contain image name and tag delimited by a colon") 
-  //   }
-  // },
+  Args: func(cmd *cobra.Command, args []string) error {
+    if len(args) != 1 {
+      return fmt.Errorf("This command requires exactly one argument")
+    }
+    return nil
+  },
   Run: func(cmd *cobra.Command, args []string) {
     // fmt.Println("deploy called")
+
+    // TODO check number of arguments
     runDeploy(args[0])
   },
 }
@@ -68,11 +69,13 @@ to quickly create a Cobra application.`,
 func init() {
   RootCmd.AddCommand(deployCmd)
 
-  deployCmd.Flags().StringArrayVar(&buildVars, "var", []string{}, "Define a value for a package variable")
-  deployCmd.Flags().StringArrayVar(&buildVarFiles, "var-file", []string{}, "Define file with values for a package variables")
-  deployCmd.Flags().StringArrayVar(&buildPatches, "patch", []string{}, "Apply directly typed patch for the manifest")
-  deployCmd.Flags().StringArrayVar(&buildPatchFiles, "patch-file", []string{}, "Apply patch from a file for the manifest")
-  deployCmd.Flags().BoolVar(&buildDefaultPWL, "default-prune-white-list", false, "Use the default prune white-list for the kubect apply operation. Enabling this option speeds-up deployment, but not all resource versions are pruned")
+  deployCmd.Flags().StringArrayVar(&deployVarFlags, "var", []string{}, "Define a value for a package variable")
+  deployCmd.Flags().StringArrayVar(&deployVarFiles, "var-file", []string{}, "Define file with values for a package variables")
+  deployCmd.Flags().StringArrayVar(&deployPatches, "patch", []string{}, "Apply directly typed patch for the manifest")
+  deployCmd.Flags().StringArrayVar(&deployPatchFiles, "patch-file", []string{}, "Apply patch from a file for the Kubernetes manifest")
+  deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
+  deployCmd.Flags().StringVar(&deployMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
+  deployCmd.Flags().BoolVar(&deployDefaultPWL, "default-prune-white-list", false, "Use the default prune white-list for the kubect apply operation. Enabling this option speeds-up deployment, but not all resource versions are pruned")
 
   // Here you will define your flags and configuration settings.
 
@@ -89,47 +92,49 @@ func runDeploy(image string) {
   log.Info("Starting Carbon deploy")
 
   vars := parseVars()
-  patches := parsePatches()
-  
+  patches, err := parsePatches()
+  if err != nil {
+    log.Fatal("Failed to parse patches due to the error: %s", err.Error())
+    os.Exit(1)
+  }  
 
   // var image string // should be replaced by input data
   // labels, err := dockermeta.GetLabels(image)
   log.Info("Getting carbon package metadata")
   dm := dockermeta.NewDockerMeta(image)
-  labels := dm.GetLabels()
-  // if err != nil {
-  //   // panic(err.Error())
-  //   log.Fatal("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-  //   os.Exit(1)
-  // }
+  labels, err := dm.GetLabels()
+  if err != nil {
+    log.Fatal("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
+    os.Exit(1)
+  }
 
-  meta, err := pkgmeta.DeserializeMeta(labels)
+  meta, err := pkgmeta.Deserialize(labels)
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to deserialize Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
     os.Exit(1)
   }
 
-  kd, err := kubernetes.NewKubeDeployment(meta, dm.Name(), dm.Tag())
+  kdeploy, err := kubernetes.NewKubeDeployment(meta, dm.Name(), dm.Tag())
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to create new instance of KubeDeploy due to the error: %s", err.Error())
     os.Exit(1)
   }
 
-  kd.UpdateVars(vars)
+  kdeploy.UpdateVars(vars)
 
-  log.Info("Building kubernetes configuration")
-  kd.Build()
-  // if err != nil {
-  //   // panic(err.Error())
-  //   log.Fatal("Failed to build kubernetes configuration due to the error: %s", err.Error())
-  //   os.Exit(1)
-  // }
+  log.Info("Building Kubernetes configuration")
+  err = kdeploy.Build()
+  if err != nil {
+    // panic(err.Error())
+    log.Fatal("Failed to build Kubernetes configuration due to the error: %s", err.Error())
+    os.Exit(1)
+  }
 
   log.Info("Applying patches")
   // var patches [][]byte
-  err = kd.ProcessPatches(patches)
+  err = kdeploy.ProcessPatches(patches)
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to apply user patches for kubernetes resources due to the error: %s", err.Error())
@@ -138,7 +143,7 @@ func runDeploy(image string) {
 
 
 
-  err = kd.SetAppLabel()
+  err = kdeploy.SetAppLabel()
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to apply Carbon labels for kubernetes resources due to the error: %s", err.Error())
@@ -148,34 +153,77 @@ func runDeploy(image string) {
 
 
   log.Info("Applying kubernetes configuration")
-  // fmt.Println(string(kd.BuiltManifest))
-  err = kd.Apply(buildDefaultPWL)
+  // fmt.Println(string(kdeploy.BuiltManifest))
+  err = kdeploy.Apply(deployDefaultPWL, deployNamespace)
   if err != nil {
     // panic(err.Error())
-    log.Fatalf("Failed to apply Kubernetes configuration due to the error: %s", err.Error())
+    log.Errorf("Failed to apply Kubernetes configuration due to the error: %s", err.Error())
+    revert(kdeploy)
     os.Exit(1)
   }
+
+  log.Info("Applying Carbon metadata for the package")
+  kmeta := kubemeta.New(kdeploy, patches, getDeployMetadataNamespace())
+  err = kmeta.Apply()
+  if err != nil {
+    // panic(err.Error())
+    log.Errorf("Failed to update Carbon metadata due to the error: %s", err.Error())
+    revert(kdeploy)
+    os.Exit(1)
+  }
+
   log.Info("Carbon package has been deployed successfully")
 }
 
 func parseVars() map[string]string {
   log.Debug("Parsing variables")
 
+  homeVarsPath := homedir.Path() + "/" + "carbon.vars"
+
   vars := variables.NewVars()
-  vars.ParseVarFiles(buildVarFiles)
-  vars.ParseFlags(buildVars)
-  
+  if _, err := os.Stat(homeVarsPath); err == nil {
+    // vars.ParseFiles([]string{homeVarsPath})
+   deployVarFiles = append([]string{homeVarsPath}, deployVarFiles...)
+  }
+  err := vars.ParseFiles(deployVarFiles)
+  if err != nil {
+    log.Fatalf("Failed to parse variable files due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+  vars.ParseFlags(deployVarFlags)
+  if err != nil {
+    log.Fatalf("Failed to parse variable flags due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+
   return vars.Data
+}
+
+func revert(kdeploy *kubernetes.KubeDeployment) {
+  log.Error("Trying to revert changes")
+  kmeta, err := kubemeta.Get(kdeploy.Variables.Pkg.Name, getDeployMetadataNamespace())
+  if err != nil {
+    log.Fatalf("Failed to revert Kubernetes configuration due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+  kdeploy.BuiltManifest = []byte(kmeta.Data.Manifest)
+  err = kdeploy.Apply(deployDefaultPWL, deployNamespace)
+  if err != nil {
+    log.Fatalf("Failed to revert Kubernetes configuration due to the error: %s", err.Error())
+    os.Exit(1)
+  }
+  log.Error("Revert has ran successfully")
+  os.Exit(1)
 }
 
 // func parsePatches() [][]byte {
 //   log.Debug("Parsing patches")
-//   // if len(buildPatches) > 0 && len(buildPatchFiles) > 0 {
+//   // if len(deployPatches) > 0 && len(deployPatchFiles) > 0 {
 //   //   fmt.Prinln("`patch` and `patch-file` parameters can't be used at the same time")
 //   //   os.Exit(1)
 //   // }
 //   var patches [][]byte
-//   for _, i := range buildPatchFiles {
+//   for _, i := range deployPatchFiles {
 //     d, err := ioutil.ReadFile(i)
 //     if err != nil {
 //       // panic(err.Error())
@@ -186,7 +234,7 @@ func parseVars() map[string]string {
 //     patches = append(patches, d)
 //   }
 
-//   for _, i := range buildPatches {
+//   for _, i := range deployPatches {
 //     patches = append(patches, []byte(i))
 //   }
 
@@ -194,33 +242,49 @@ func parseVars() map[string]string {
 // }
 
 
-func parsePatches() []byte {
+func parsePatches() ([]byte, error) {
   log.Debug("Parsing patches")
-  // if len(buildPatches) > 0 && len(buildPatchFiles) > 0 {
+  // if len(deployPatches) > 0 && len(deployPatchFiles) > 0 {
   //   fmt.Prinln("`patch` and `patch-file` parameters can't be used at the same time")
   //   os.Exit(1)
   // }
   var rawPatches [][]byte
-  for _, i := range buildPatchFiles {
+  for _, i := range deployPatchFiles {
     d, err := ioutil.ReadFile(i)
     if err != nil {
       // panic(err.Error())
-      log.Fatalf("Failed to read a patch file '%s', due to the error: '%s'. Skipping it.", i, err.Error())
-      os.Exit(1)
+      return nil, errors.Wrapf(err, "reading a patch file '%s'", i)
+      // log.Fatalf("Failed to read a patch file '%s', due to the error: '%s'. Skipping it.", i, err.Error())
+      // os.Exit(1)
       // continue
     }
     rawPatches = append(rawPatches, d)
   }
 
-  for _, i := range buildPatches {
+  for _, i := range deployPatches {
     rawPatches = append(rawPatches, []byte(i))
   }
 
   var resp []byte
   for _, i := range rawPatches {
-    ni := tojson.ToJson(i)
+    ni, err := tojson.ToJson(i)
+    if err != nil {
+      // panic(err.Error())
+      return nil, err
+      // continue
+    }
     resp = append(resp, ni...)
   }
 
-  return resp
+  return resp, nil
+}
+
+func getDeployMetadataNamespace() string {
+  if deployMetadataNamespace != "" {
+    return deployMetadataNamespace
+  }
+  if deployNamespace != "" {
+    return deployNamespace
+  }
+  return "default"
 }

@@ -7,6 +7,7 @@ import (
   "path/filepath"
   "strings"
   "text/template"
+  "github.com/pkg/errors"
   // "gopkg.in/yaml.v2"
 
   "github.com/starofservice/carbon/pkg/util/tojson"
@@ -34,7 +35,8 @@ func (self *KubeDeployment) VerifyTpl(path string) error {
  // tpl := template.Must(template.ParseGlob(path))
   tpl, err := template.ParseFiles(path)
   if err != nil {
-    return fmt.Errorf("Unable to parse kuberentese manifest teamplate %s due to the error: %s", path, err.Error())
+    // return fmt.Errorf("Unable to parse kuberentese manifest teamplate %s due to the error: %s", path, err.Error())
+    return errors.Wrapf(err, "parsing Kuberentese manifests template '%s'", path)
   }
 
   tpl.Option("missingkey=error")
@@ -46,11 +48,15 @@ func (self *KubeDeployment) VerifyTpl(path string) error {
     if strings.Index(err.Error(), "no entry for key") != -1 || strings.Index(err.Error(), "can't evaluate field") != -1 {
       return fmt.Errorf("%s\nPlease use make sure that all variables are defined at carbon.yaml and use `.Var` prefix for the variables at kubernetes config files.", err.Error())
     } else {
-      return fmt.Errorf("Unable to execute kuberentese manifest teamplate due to the error: %s", err.Error())
+      // return fmt.Errorf("Unable to execute kuberentese manifests teamplate due to the error: %s", err.Error())
+      return errors.Wrap(err, "building Kuberentese manifests template")
     }
   }
 
-  _ = tojson.ToJson(data.Bytes())
+  _, err = tojson.ToJson(data.Bytes())
+  if err != nil {
+    return errors.Wrap(err, "converting Kuberentese manifests to JSON")
+  }
   
   // if err = self.VerifyYAML(path, data.Bytes()); err != nil {
   //   return err

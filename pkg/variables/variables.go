@@ -2,9 +2,9 @@ package variables
 
 import (
   // "fmt"
-  "os"
+  // "os"
   "regexp"
-
+  "github.com/pkg/errors"
 
   "github.com/magiconair/properties"
   log "github.com/sirupsen/logrus"
@@ -32,7 +32,7 @@ func NewVars() *Vars {
 //   os.Exit(1)
 // }
 
-func (self *Vars) ParseVarFiles(vf []string) {
+func (self *Vars) ParseFiles(vf []string) error {
   log.Debug("Parsing variable files")
   // properties.ErrorHandler = PropErrorHandler
   // p := properties.LoadFiles(vf, properties.UTF8, false)
@@ -48,8 +48,9 @@ func (self *Vars) ParseVarFiles(vf []string) {
     log.Tracef("Parsing %s", i)
     p, err := l.LoadFile(i)
     if err != nil {
-      log.Fatalf("Failed to parse a variables file '%s', due to the error: '%s'. Skipping it.", i, err.Error())
-      os.Exit(1)
+      // log.Fatalf("Failed to parse a variables file '%s', due to the error: '%s'. Skipping it.", i, err.Error())
+      // os.Exit(1)
+      return errors.Wrapf(err, "parsing variable file '%s'", i)      
       // continue
     }
 
@@ -57,9 +58,11 @@ func (self *Vars) ParseVarFiles(vf []string) {
       self.Data[k] = v
     }
   }
+
+  return nil
 }
 
-func (self *Vars) ParseFlags(flags []string) {
+func (self *Vars) ParseFlags(flags []string) error {
   log.Debug("Parsing variable flags")
 
   stringMapRegex := regexp.MustCompile("[=]")
@@ -68,11 +71,14 @@ func (self *Vars) ParseFlags(flags []string) {
     // kd.Variables.Var[v.Name] = v.Default
     parts := stringMapRegex.Split(v, 2)
     if len(parts) != 2 {
-      log.Fatalf("Expected KEY=VALUE format, but got '%s'. Skipping this item.", v)
-      os.Exit(1)
+      // log.Fatalf("Expected KEY=VALUE format, but got '%s'. Skipping this item.", v)
+      // os.Exit(1)
+      return errors.Errorf("Expected KEY=VALUE format, but got '%s'", v)
       // continue
     }
 
     self.Data[parts[0]] = parts[1]
   }
+
+  return nil
 }

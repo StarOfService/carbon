@@ -1,21 +1,23 @@
 package latest
 
 import (
-  yaml "gopkg.in/yaml.v2"
+  // yaml "gopkg.in/yaml.v2"
+  "encoding/json"
 
   "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
-const Version string = "carbon/v1alpha1"
+// const Version string = "v1alpha1"
+const Version string = "v1alpha1"
 
 type KubeMetadata struct {
-  ApiVersion    string            `yaml:"apiVersion"`
-  Name          string            `yaml:"name"`
-  Version       string            `yaml:"version"`
-  Source        string            `yaml:"source"`
-  Variables     map[string]string `yaml:"variables"`
-  Patches       string            `yaml:"patches"`
-  Manifest      string            `yaml:"manifest"`
+  ApiVersion    string            `json:"apiVersion"`
+  Name          string            `json:"name"`
+  Version       string            `json:"version"`
+  Source        string            `json:"source"`
+  Variables     map[string]string `json:"variables"`
+  Patches       string            `json:"patches"`
+  Manifest      string            `json:"manifest"`
   // hooks
   // dependencies
 }
@@ -28,8 +30,8 @@ func (c *KubeMetadata) GetVersion() string {
   return c.ApiVersion
 }
 
-func (c *KubeMetadata) Parse(contents []byte) error {
-  if err := yaml.UnmarshalStrict(contents, c); err != nil {
+func (c *KubeMetadata) Parse(data []byte) error {
+  if err := json.Unmarshal(data, c); err != nil {
     return err
   }
 

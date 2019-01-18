@@ -4,121 +4,99 @@ import (
   "github.com/pkg/errors"
   // "fmt"
   "time"
-  // "encoding/base64"
-  // "github.com/starofservice/flapper"
+  "encoding/json"
 
   log "github.com/sirupsen/logrus"
 
-  rootcfglatest "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
+  // rootcfglatest "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
+  "github.com/starofservice/carbon/pkg/schema/rootcfg"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
-  "github.com/starofservice/carbon/pkg/schema/pkgmeta/util"
+  "github.com/starofservice/carbon/pkg/schema/versioned"
+
   "github.com/starofservice/carbon/pkg/util/base64"
-  // "github.com/starofservice/carbon/pkg/kubernetes"
+
 )
 
-// type MainConfigVersion struct {
-//   apiVersion string
-// }
+const (
+  carbonMetaLabel = "carbon-package-metadata"
+)
 
-// const (
-//   MetaPrefix = "c6"
-//   MetaDelimiter = "."
-// )
-
-type APIVersion struct {
-  ApiVersion string
+var schemaVersions = map[string]func() versioned.VersionedConfig{
+  latest.Version: latest.NewPackageConfig,
 }
 
-var schemaVersions = versions{
-  // {v1alpha1.Version, v1alpha1.NewPackageConfig},
-  {latest.Version, latest.NewPackageConfig},
-}
-
-type version struct {
-  apiVersion string
-  factory    func() util.VersionedConfig
-}
-
-type versions []version
-
-// Find search the constructor for a given api version.
-func (v *versions) Find(apiVersion string) (func() util.VersionedConfig, bool) {
-  for _, version := range *v {
-    if version.apiVersion == apiVersion {
-      return version.factory, true
-    }
+func GetCurrentVersion(data []byte) (string, error) {
+  type APIVersion struct {
+    Version string `json:"apiVersion"`
   }
-
-  return nil, false
+  apiVersion := &APIVersion{}
+  if err := json.Unmarshal(data, apiVersion); err != nil {
+    return "", errors.Wrap(err, "parsing api version")
+  }
+  return apiVersion.Version, nil
 }
 
+type PackageConfig struct {
+ Data latest.PackageConfig
+}
 
-func New(mainCfg *rootcfglatest.CarbonConfig, rawMainCfg, rawKubeCfg []byte) *latest.PackageConfig {
+func New(mainCfg *rootcfg.CarbonConfig, rawMainCfg, rawKubeCfg []byte) *PackageConfig {
   mainCfgB64 := base64.Encode(rawMainCfg)
   kubeCfgB64 := base64.Encode(rawKubeCfg)
 
-  p := latest.NewPackageConfigWithVersion()
-  p.Name = mainCfg.Name
-  p.Version = mainCfg.Version
-  p.BuildTime = time.Now().Unix()
-  p.MainConfigB64 = mainCfgB64
-  p.KubeConfigB64 = kubeCfgB64
+  p := &PackageConfig{
+    Data: latest.PackageConfig{
+      ApiVersion: latest.Version,
+      PkgName: mainCfg.Data.Name,
+      PkgVersion: mainCfg.Data.Version,
+      BuildTime: time.Now().Unix(),
+      MainConfigB64: mainCfgB64,
+      KubeConfigB64: kubeCfgB64,      
+    },
+  }
 
-  for _, i := range mainCfg.Variables {
-    p.Variables = append(p.Variables, latest.PackageConfigVariable{Name: i.Name, Default: i.Default, Description: i.Description})
+  for _, i := range mainCfg.Data.Variables {
+    p.Data.Variables = append(p.Data.Variables, latest.PackageConfigVariable{Name: i.Name, Default: i.Default, Description: i.Description})
   }
   return p
 }
 
-func SerializeMeta(p latest.PackageConfig) (map[string]string, error) {
+func (self *PackageConfig) Serialize() (map[string]string, error) {
   log.Debug("Serializing carbon package metadata")
-  fh, err := util.NewFlapper()
+  data, err := json.Marshal(self.Data)
   if err != nil {
-    panic(err.Error())
+    return nil, err
   }
-  resp, err := fh.Marshal(p)
-  if err != nil {
-    panic(err.Error())
+
+  resp := map[string]string{
+    carbonMetaLabel: string(data),
   }
   return resp, nil
 }
 
-// ParseConfig reads a configuration file.
-func DeserializeMeta(metaMap map[string]string) (*latest.PackageConfig, error) {
+func Deserialize(metaMap map[string]string) (*PackageConfig, error) {
   log.Debug("Deserializing carbon package metadata")
-  // buf, err := misc.ReadConfiguration(filename)
-  // if err != nil {
-  //   return nil, errors.Wrap(err, "read skaffold config")
-  // }
-  // cfgSrc, err := ioutil.ReadFile(cfgPath)
-  // if err != nil {
-  //   // log.Fatal(err)
-  // }
+  
+  data := []byte(metaMap[carbonMetaLabel])
 
-  apiv := &APIVersion{}
-  fh, err := util.NewFlapper()
+  current, err := GetCurrentVersion(data)
   if err != nil {
-    panic(err.Error())
+    return nil, err
   }
 
-  if err := fh.Unmarshal(metaMap, apiv); err != nil {
-    return nil, errors.Wrap(err, "parsing api version")
+  sh := versioned.NewSchemaHandler(current, latest.Version)
+  for k, v := range schemaVersions {
+    sh.RegVersion(k, v)
   }
 
-  factory, present := schemaVersions.Find(apiv.ApiVersion)
-  if !present {
-    return nil, errors.Errorf("unknown api version: '%s'", apiv.ApiVersion)
+  cfg, err := sh.GetLatestConfig(data)
+  if err != nil {
+    return nil, err
   }
-
-  cfg := factory()
-  if err := cfg.Parse(metaMap); err != nil {
-    return nil, errors.Wrap(err, "unable to parse config")
-  }
-
-  // if err := yamltags.ProcessStruct(cfg); err != nil {
-  //   return nil, errors.Wrap(err, "invalid config")
-  // }
 
   parsedCfg := cfg.(*latest.PackageConfig)
-  return parsedCfg, nil
+  pc := &PackageConfig{
+    Data: *parsedCfg,
+  }
+  return pc, nil
 }

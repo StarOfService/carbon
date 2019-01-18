@@ -4,9 +4,10 @@ import (
   "bytes"
   "fmt"
   "io"
-  "os"
+  // "os"
   "encoding/json"
   "gopkg.in/yaml.v2"
+  "github.com/pkg/errors"
   ghodssyaml "github.com/ghodss/yaml"
   log "github.com/sirupsen/logrus"
 )
@@ -16,18 +17,19 @@ const (
   yamlSep = "---"
 )
 
-func ToJson(data []byte) []byte {
+func ToJson(data []byte) ([]byte, error) {
   log.Debug("Normalizing config data")
   log.Tracef("Input data: %s", string(data))
 
   if err := checkJson(data); err == nil {
-    return data
+    return data, nil
   }
 
   if err := checkYaml(data); err != nil {
-    log.Fatal("Failed to verify YAML document due to the error: ", err.Error())
+    // log.Fatal("Failed to verify YAML document due to the error: ", err.Error())
     log.Fatalf("Document:\n%s", data)
-    os.Exit(1)
+    // os.Exit(1)
+    return nil, errors.Wrap(err, "verifying YAML document")
   }
 
   log.Debug("Converting YAML to JSON")
@@ -40,9 +42,10 @@ func ToJson(data []byte) []byte {
     }
     jd, err := ghodssyaml.YAMLToJSON(d)
     if err != nil {
-      log.Fatal("Failed to convert YAML document to JSON format due to the error: ", err.Error())
+      // log.Fatal("Failed to convert YAML document to JSON format due to the error: ", err.Error())
       log.Fatalf("Document:\n%s", d)
-      os.Exit(1)
+      // os.Exit(1)
+      return []byte{}, errors.Wrap(err, "converting YAML document to JSON format")
     }
     jsonDocs = append(jsonDocs, jd)
   }
@@ -51,13 +54,14 @@ func ToJson(data []byte) []byte {
 
   // Checking response format because plain text may be considered as a valid YAML format
   if err := checkJson(resp); err != nil {
-    log.Fatal("Failed to verify JSON document after the YAML->JSON convertion due to the error: ", err.Error())
+    // log.Fatal("Failed to verify JSON document after the YAML->JSON convertion due to the error: ", err.Error())
     log.Fatalf("Document:\n%s", data)
-    os.Exit(1)
+    // os.Exit(1)
+    return []byte{}, errors.Wrap(err, "verifying JSON document after the YAML->JSON convertion")
   }
 
   log.Trace("Output data: %s", string(resp))
-  return resp
+  return resp, nil
 }
 
 // json.Valid considers multi-document as a wrong JSON format.

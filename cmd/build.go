@@ -14,7 +14,7 @@
 package cmd
 
 import (
-  // "fmt"
+  "fmt"
   // "reflect"
   "github.com/spf13/cobra"
   "io/ioutil"
@@ -26,6 +26,7 @@ import (
   // // "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
   "github.com/starofservice/carbon/pkg/schema/rootcfg"
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
+  // dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
   // "github.com/starofservice/carbon/pkg/kubernetes/manifest"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
   "github.com/starofservice/carbon/pkg/kubernetes"
@@ -34,6 +35,7 @@ import (
 )
 
 var cfgFile string
+// var buildPush bool
 
 // buildCmd represents the build command
 var buildCmd = &cobra.Command{
@@ -45,9 +47,12 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-  // Run: func(cmd *cobra.Command, args []string) {
-  //   fmt.Println("build called")
-  // },
+  Args: func(cmd *cobra.Command, args []string) error {
+    if len(args) != 0 {
+      return fmt.Errorf("This command doesn't use any arguments")
+    }
+    return nil
+  },
   Run: func(cmd *cobra.Command, args []string) {
     runBuild()
   },
@@ -59,15 +64,7 @@ func init() {
   // cobra.OnInitialize(initConfig)
 
   buildCmd.Flags().StringVarP(&cfgFile, "config", "c", "carbon.yaml", "config file (default is carbon.yaml)")
-  // Here you will define your flags and configuration settings.
-
-  // Cobra supports Persistent Flags which will work for this command
-  // and all subcommands, e.g.:
-  // buildCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-  // Cobra supports local flags which will only run when this command
-  // is called directly, e.g.:
-  // buildCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+  // buildCmd.Flags().BoolVar(&buildPush, "push", false, "Push built images to the repositories (disabled by default)")
 }
 
 // func initConfig() {
@@ -124,8 +121,18 @@ func runBuild() {
   // cfgB64 := util.EncodeMetadata(cfgBody)
   // cfgB64 := pkgmeta.B64Encode(cfgBody)
 
+  if cfg.HookDefined(rootcfg.HookPreBuild) {
+    log.Info("Running pre-build hook")
+    err = cfg.RunHook(rootcfg.HookPreBuild)
+    if err != nil {
+      log.Fatalf("Failed to run pre-build hook due to the error: %s", err.Error())
+      os.Exit(1)
+    }    
+  }
 
-  kubeManif, err := kubernetes.ReadTemplates(cfg.KubeManifests)
+
+
+  kubeManif, err := kubernetes.ReadTemplates(cfg.Data.KubeManifests)
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to read Kubernetes configs due to the error: %s", err.Error())
@@ -144,7 +151,7 @@ func runBuild() {
     os.Exit(1)
   }
 
-  err = kd.VerifyAll(cfg.KubeManifests)
+  err = kd.VerifyAll(cfg.Data.KubeManifests)
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to verify Kubernetes configs due to the error: %s", err.Error())
@@ -153,25 +160,45 @@ func runBuild() {
 
   }
 
-  metaMap, err := pkgmeta.SerializeMeta(*meta)
+  metaMap, err := meta.Serialize()
   if err != nil {
     // panic(err.Error())
     log.Fatalf("Failed to serialize Carbon config due to the error: %s", err.Error())
     os.Exit(1)
   }
 
-  // fmt.Println("cfg processed")
-  // fmt.Println(cfg.Dockerfile)
-  // fmt.Println(filepath.Dir(cfgPath))
-  // fmt.Println(reflect.TypeOf(cfg.Artifacts))
-  // fmt.Println(cfg.Artifacts)
-
-  // fmt.Println(cfg)
-  // fmt.Println(metaMap)
-
   log.Info("Building Carbon package")
-  bo := dockerbuild.NewBuildOptions()
-  bo.Build(cfg, filepath.Dir(cfgPath), metaMap)
+  buildOpts := dockerbuild.NewBuildOptions()
+  err = buildOpts.Build(cfg, filepath.Dir(cfgPath), metaMap)
+  if err != nil {
+    log.Fatalf("Failed to build Carbon package due to the error: %s", err.Error())
+    os.Exit(1)
+  }
   // fmt.Println("docker build processed")
+
+  if cfg.HookDefined(rootcfg.HookPostBuild) {
+    log.Info("Running post-build hook")
+    err = cfg.RunHook(rootcfg.HookPostBuild)
+    if err != nil {
+      log.Fatalf("Failed to run post-build hook due to the error: %s", err.Error())
+      os.Exit(1)
+    }
+  }
+
+  // if buildPush {
+  //   log.Info("Pushing built docker images")
+  //   // TODO
+  //   var tagsToPush []string
+  //   for _, i := range cfg.Data.Artifacts {
+  //     dm := dockermeta.NewDockerMeta(i)
+  //     // fmt.Println(dm.Domain())
+  //     log.Warnf("domain: %s", dm.Domain())
+  //     if dm.Domain() != "" {
+  //       tagsToPush = append(tagsToPush, i)
+  //     }
+  //   }
+  //   log.Warnf("domains length: %s", len(tagsToPush))
+  // }
+
   log.Info("Carbon package has been built successfully")
 }

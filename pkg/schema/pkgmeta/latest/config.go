@@ -1,64 +1,42 @@
 package latest
 
 import (
-  // "github.com/starofservice/flapper"
-  // "github.com/starofservice/carbon/pkg/schema/pkgmeta"
-  "github.com/starofservice/carbon/pkg/schema/pkgmeta/util"
+  "encoding/json"
+  "github.com/starofservice/carbon/pkg/schema/versioned"
 )
+
 
 const Version string = "v1alpha1"
 
-// type PackageConfigKubeManifest struct {
-//   Filename string
-//   DataB64  string
-//   Format   string
-// }
-
 type PackageConfigVariable struct {
-  Name        string
-  Default     string
-  Description string
+  Name        string `json:"name"`
+  Default     string `json:"default"`
+  Description string `json:"description"`
 }
 
 type PackageConfig struct {
-  ApiVersion    string
-  Name          string
-  Version       string
-  BuildTime     int64
-  MainConfigB64 string
-  KubeConfigB64 string
-  // KubeManifests []PackageConfigKubeManifest
-  Variables     []PackageConfigVariable
+  ApiVersion    string                  `json:"apiVersion"`
+  PkgName       string                  `json:"pkgName"`
+  PkgVersion    string                  `json:"pkgVersion"`
+  BuildTime     int64                   `json:"buildtime"`
+  MainConfigB64 string                  `json:"mainConfigB64"`
+  KubeConfigB64 string                  `json:"kubeConfigB64"`
+  Variables     []PackageConfigVariable `json:"variables"`
 }
 
-func NewPackageConfig() util.VersionedConfig {
+func NewPackageConfig() versioned.VersionedConfig {
   return new(PackageConfig)
-}
-
-func NewPackageConfigWithVersion() *PackageConfig {
-  p := new(PackageConfig)
-  p.ApiVersion = Version
-  return p
 }
 
 func (c *PackageConfig) GetVersion() string {
   return c.ApiVersion
 }
 
-func (c *PackageConfig) Parse(contents map[string]string) error {
-  fh, err := util.NewFlapper()
-  if err != nil {
-    panic(err.Error())
-  }
-  if err := fh.Unmarshal(contents, c); err != nil {
+
+func (c *PackageConfig) Parse(data []byte) error {
+  if err := json.Unmarshal(data, c); err != nil {
     return err
   }
-
-  // if useDefaults {
-  //   if err := c.SetDefaultValues(); err != nil {
-  //     return errors.Wrap(err, "applying default values")
-  //   }
-  // }
 
   return nil
 }

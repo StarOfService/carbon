@@ -3,10 +3,21 @@ package latest
 import (
   yaml "gopkg.in/yaml.v2"
 
-  "github.com/starofservice/carbon/pkg/schema/rootcfg/util"
+  "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
-const Version string = "carbon/v1alpha1"
+const Version string = "v1alpha1"
+
+type CarbonConfigVariable struct {
+  Name        string `yaml:"name"`
+  Default     string `yaml:"default"`
+  Description string `yaml:"description"`
+}
+
+type CarbonConfigHooks struct {
+  PreBuild  []string `yaml:"pre-build"`
+  PostBuild []string `yaml:"post-build"`
+}
 
 type CarbonConfig struct {
   ApiVersion    string     `yaml:"apiVersion"`
@@ -16,17 +27,12 @@ type CarbonConfig struct {
   KubeManifests string     `yaml:"kubeManifests"`
   Artifacts     []string   `yaml:"artifacts"`
   Variables     []CarbonConfigVariable `yaml:"variables"`
+  Hooks         CarbonConfigHooks `yaml:"hooks"`
   // hooks
   // dependencies
 }
 
-type CarbonConfigVariable struct {
-  Name        string `yaml:"name"`
-  Default     string `yaml:"default"`
-  Description string `yaml:"description"`
-}
-
-func NewCarbonConfig() util.VersionedConfig {
+func NewCarbonConfig() versioned.VersionedConfig {
   return new(CarbonConfig)
 }
 

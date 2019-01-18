@@ -5,7 +5,9 @@ import (
   // "encoding/base64"
   // "fmt"  
   "strings"
-  "os"
+  // "os"
+
+  "github.com/pkg/errors"
   
   "github.com/containers/image/transports/alltransports"
   // "github.com/containers/image/transports"
@@ -85,7 +87,7 @@ func NewDockerMeta(image string) *DockerMeta {
   return self
 }
 
-func (self *DockerMeta) GetLabels() map[string]string {
+func (self *DockerMeta) GetLabels() (map[string]string, error) {
   log.Debug("Getting dokcer image labels")
   // ref, err := alltransports.ParseImageName(name)
   // if err != nil {
@@ -95,7 +97,7 @@ func (self *DockerMeta) GetLabels() map[string]string {
   log.Debug("Trying to receive the lables from a locally avaiable image")
   resp, err := self.getLocalImageLabels()
   if err == nil {
-    return resp
+    return resp, nil
   } else {
     log.Debug("Got an error: %s", err.Error())
   }
@@ -108,10 +110,13 @@ func (self *DockerMeta) GetLabels() map[string]string {
   log.Debug("Trying to receive the lables without authentication for a public repo")
   resp, err = self.getRemoteMetaLabels(sys)
   if err == nil {
-    return resp
+    return resp, nil
   }
 
-  username, password := self.getCredentials()
+  username, password, err := self.getCredentials()
+  if err != nil {
+    return nil, err
+  }
 
   sys.DockerAuthConfig = &types.DockerAuthConfig{
     Username: username,
@@ -120,11 +125,12 @@ func (self *DockerMeta) GetLabels() map[string]string {
 
   resp, err = self.getRemoteMetaLabels(sys)
   if err != nil {
-    log.Fatalf("Failed to get Carbon metadata for a repository '%s' due to the error: %s", self.Name(), err.Error())
-    os.Exit(1)
+    // log.Fatalf("Failed to get Carbon metadata for a repository '%s' due to the error: %s", self.Name(), err.Error())
+    // os.Exit(1)
+    return nil, errors.Wrapf(err, "getting Carbon metadata for a repository '%s'", self.Name())
   }
 
-  return resp
+  return resp, nil
 }
 
 func (self *DockerMeta) Domain() string {
@@ -175,7 +181,7 @@ func (self *DockerMeta) getRemoteMetaLabels(sys *types.SystemContext) (map[strin
   return imgInspect.Labels, nil
 }
 
-func (self *DockerMeta) getCredentials() (string, string) {
+func (self *DockerMeta) getCredentials() (string, string, error) {
   registry := self.Domain()
 
   _, _, stderr := term.StdStreams()
@@ -183,15 +189,17 @@ func (self *DockerMeta) getCredentials() (string, string) {
   creds, err := dockerConfig.GetAuthConfig(registry)
   if err != nil {
     // return "", "", fmt.Errorf("Failed to extract docker crednetials due to the error: %s", err.Error())
-    log.Fatalf("Failed to extract docker crednetials for a repository '%s' due to the error: %s", registry, err.Error())
-    os.Exit(1)
+    // log.Fatalf("Failed to extract docker crednetials for a repository '%s' due to the error: %s", registry, err.Error())
+    // os.Exit(1)
+      return "", "", errors.Wrapf(err, "extracting Docker credentials for a repository '%s'", self.Name())
   }
 
   if len(creds.Username) == 0 || len(creds.Password) == 0 {
     // return "", "", fmt.Errorf("Got empty docker username or password")
-    log.Fatalf("Got an empty docker username or password for a repository '%s'", registry)
-    os.Exit(1)
+    // log.Fatalf("Got an empty docker username or password for a repository '%s'", registry)
+    // os.Exit(1)
+    return "", "", errors.Errorf("Got an empty docker username or password for a repository '%s'", self.Name())
   }
 
-  return creds.Username, creds.Password
+  return creds.Username, creds.Password, nil
 }
