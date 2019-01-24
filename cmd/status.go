@@ -2,14 +2,11 @@ package cmd
 
 import (
   "fmt"
+  "os"
+  "github.com/olekukonko/tablewriter"
+  log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
 
-  "os"
-  log "github.com/sirupsen/logrus"
-
-
-  // "github.com/starofservice/carbon/pkg/kubernetes/manifest"
-  "github.com/olekukonko/tablewriter"
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
 )
 
@@ -18,14 +15,12 @@ var statusFull bool
 // var statusMetadataNamespace string
 
 var statusCmd = &cobra.Command{
-  Use:   "status",
-  Short: "A brief description of your command",
-  Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+  Use:   "status [package_name [package_name ...]]",
+  Short: "Show information about installed Carbon packages for your Kubernetes cluster",
+  Long: `
+Show information about installed Carbon packages at the current Kubernetes cluster.
+Without arguments all installed packages are listed.
+You can provide name for a specific package(s). In this case a detailed information for the requested package(s) is printed.`,
   Run: func(cmd *cobra.Command, args []string) {
     if len(args) == 0 {
       runStatusAll()  
@@ -44,7 +39,7 @@ func init() {
   RootCmd.AddCommand(statusCmd)
 
   statusCmd.Flags().StringVarP(&statusNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
-  statusCmd.Flags().BoolVarP(&statusFull, "full", "f", false, "Print full information (including patches and manifests) for a given package. Disabled by default.")
+  statusCmd.Flags().BoolVarP(&statusFull, "full", "f", false, "Print a full information for a given package(s) (including patches and applied manifests). Disabled by default.")
   // deployCmd.Flags().StringVar(&statusMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
 }
 

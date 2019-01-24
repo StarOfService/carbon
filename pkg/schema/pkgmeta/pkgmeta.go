@@ -1,20 +1,16 @@
 package pkgmeta
 
 import (
-  "github.com/pkg/errors"
-  // "fmt"
-  "time"
   "encoding/json"
+  "time"
 
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 
-  // rootcfglatest "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
+  "github.com/starofservice/carbon/pkg/schema/rootcfg"
   "github.com/starofservice/carbon/pkg/schema/versioned"
-
   "github.com/starofservice/carbon/pkg/util/base64"
-
 )
 
 const (

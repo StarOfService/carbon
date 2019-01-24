@@ -3,7 +3,6 @@ package latest
 import (
   "errors"
   
-  // "github.com/starofservice/carbon/pkg/schema/rootcfg/util"
   "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 

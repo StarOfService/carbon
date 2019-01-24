@@ -1,13 +1,11 @@
 package latest
 
 import (
-  // yaml "gopkg.in/yaml.v2"
   "encoding/json"
 
   "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
-// const Version string = "v1alpha1"
 const Version string = "v1alpha1"
 
 type KubeMetadata struct {

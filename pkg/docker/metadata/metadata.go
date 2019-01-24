@@ -2,65 +2,21 @@ package metadata
 
 import (
   "context"
-  // "encoding/base64"
-  // "fmt"  
   "strings"
-  // "os"
 
-  "github.com/pkg/errors"
-  
   "github.com/containers/image/transports/alltransports"
-  // "github.com/containers/image/transports"
   "github.com/containers/image/types"
   "github.com/docker/cli/cli/config"
   "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/term"
   "github.com/docker/distribution/reference"
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 )
 
 const (
   kubeImageOS = "linux"
 )
-
-// TODO: provide possibility to provide credentials with parameters
-
-// // TODO: remove
-// func Get() { 
-
-//   // 1) check local repo || force remote
-//   // 2) parse remot url
-
-//   // labels := make(map[string]string)
-//   // _, _ = GetLabels("abcdefg:latest")
-//   // // fmt.Println(labels)
-//   // _, _ = GetLabels("abcdefg111:latest")
-//   // _, _ = GetLabels("abcdefg111")
-//   // // fmt.Println(labels)
-//   // labels, _ := GetLabels("docker://fedora:latest")
-
-//   // labels, err := GetLabels("docker://727466838232.dkr.ecr.eu-west-1.amazonaws.com/aquila:2.0.0.2")
-//   // // labels, _ := GetLabels("docker://starof/apache:latest")
-//   // // labels, _ := GetLabels("docker://registry.starofservice.com/docker/apache:latest")
-//   // if err != nil {
-//   //   fmt.Println(err.Error())
-//   //   return
-//   // }
-//   // fmt.Println(labels)
-
-//   dm := NewDockerMeta("docker://registry.starofservice.com/docker/apache:latest")
-//   labels, err := dm.GetLabels()
-//   if err != nil {
-//     fmt.Println(err.Error())
-//     return
-//   }
-  
-//   fmt.Println(labels)
-//   fmt.Println(dm.Domain())
-//   fmt.Println(dm.Name())
-//   fmt.Println(dm.Tag())
-// }
-
 
 type DockerMeta struct {
   image string
@@ -89,10 +45,6 @@ func NewDockerMeta(image string) *DockerMeta {
 
 func (self *DockerMeta) GetLabels() (map[string]string, error) {
   log.Debug("Getting dokcer image labels")
-  // ref, err := alltransports.ParseImageName(name)
-  // if err != nil {
-  //   panic(err)
-  // }
 
   log.Debug("Trying to receive the lables from a locally avaiable image")
   resp, err := self.getLocalImageLabels()
@@ -102,7 +54,6 @@ func (self *DockerMeta) GetLabels() (map[string]string, error) {
     log.Debug("Got an error: %s", err.Error())
   }
 
-  // ctx := context.Background()
   sys := &types.SystemContext{
     OSChoice: kubeImageOS,
   }
@@ -113,7 +64,7 @@ func (self *DockerMeta) GetLabels() (map[string]string, error) {
     return resp, nil
   }
 
-  username, password, err := self.getCredentials()
+  username, password, err := self.GetCredentials()
   if err != nil {
     return nil, err
   }
@@ -125,8 +76,6 @@ func (self *DockerMeta) GetLabels() (map[string]string, error) {
 
   resp, err = self.getRemoteMetaLabels(sys)
   if err != nil {
-    // log.Fatalf("Failed to get Carbon metadata for a repository '%s' due to the error: %s", self.Name(), err.Error())
-    // os.Exit(1)
     return nil, errors.Wrapf(err, "getting Carbon metadata for a repository '%s'", self.Name())
   }
 
@@ -181,23 +130,17 @@ func (self *DockerMeta) getRemoteMetaLabels(sys *types.SystemContext) (map[strin
   return imgInspect.Labels, nil
 }
 
-func (self *DockerMeta) getCredentials() (string, string, error) {
+func (self *DockerMeta) GetCredentials() (string, string, error) {
   registry := self.Domain()
 
   _, _, stderr := term.StdStreams()
   dockerConfig := config.LoadDefaultConfigFile(stderr)
   creds, err := dockerConfig.GetAuthConfig(registry)
   if err != nil {
-    // return "", "", fmt.Errorf("Failed to extract docker crednetials due to the error: %s", err.Error())
-    // log.Fatalf("Failed to extract docker crednetials for a repository '%s' due to the error: %s", registry, err.Error())
-    // os.Exit(1)
       return "", "", errors.Wrapf(err, "extracting Docker credentials for a repository '%s'", self.Name())
   }
 
   if len(creds.Username) == 0 || len(creds.Password) == 0 {
-    // return "", "", fmt.Errorf("Got empty docker username or password")
-    // log.Fatalf("Got an empty docker username or password for a repository '%s'", registry)
-    // os.Exit(1)
     return "", "", errors.Errorf("Got an empty docker username or password for a repository '%s'", self.Name())
   }
 

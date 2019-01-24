@@ -1,16 +1,14 @@
 package rootcfg
 
 import (
-  "github.com/pkg/errors"
-  // "fmt"
   "gopkg.in/yaml.v2"
-  // "io/ioutil"
+
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 
-  "github.com/starofservice/carbon/pkg/util/command"
   "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
-  // "github.com/starofservice/carbon/pkg/schema/rootcfg/util"
   "github.com/starofservice/carbon/pkg/schema/versioned"
+  "github.com/starofservice/carbon/pkg/util/command"
 )
 
 var schemaVersions = map[string]func() versioned.VersionedConfig{
@@ -89,16 +87,13 @@ func (self *CarbonConfig) RunHook(hookType string) error {
   case HookPostBuild:
     cmds = self.Data.Hooks.PostBuild
   default:
-    // return fmt.Errorf("Unsupported hook type: %s", hookType)
     return errors.Errorf("Unsupported hook type: %s", hookType)
   }
+
   for _, i := range cmds {
     err := command.Run(i)
     if err != nil {
       return err
-      // return errors.Wrapf(err, "command %s", i)
-      // return fmt.Errorf("Failed to run command '%s' due to the error: %s", i, err.Error())
-
     }
   }
   return nil

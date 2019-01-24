@@ -4,8 +4,7 @@ import (
   "fmt"
   "io/ioutil"
   "path/filepath"
-  // "strings"
-  // "gopkg.in/yaml.v2"
+
   log "github.com/sirupsen/logrus"
 )
 

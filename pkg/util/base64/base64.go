@@ -3,6 +3,7 @@ package base64
 import (
   "fmt"
   "encoding/base64"
+
   log "github.com/sirupsen/logrus"
 )
 

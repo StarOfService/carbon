@@ -55,19 +55,33 @@
   name = "gopkg.in/yaml.v2"
   version = "2.2.1"
 
-[[constraint]]
+#[[constraint]]
+#  name = "k8s.io/minikube"
+#  version = "=0.33.1"
+
+[[override]]
   name = "k8s.io/kubernetes"
-  version = "~1.13.1"
+  version = "=1.13.1"
+
+[[override]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.13.1"
+  #revision = "05914d821849570fba9eacfb29466f2d8d3cd229"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.13.1"
+  #revision = "2b1284ed4c93a43499e781493253e2ac5959c4fd"
 
 [[override]]
   name = "k8s.io/apiserver"
-  #version = "kubernetes-1.13.1"
-  revision = "3ccfe8365421eb08e334b195786a2973460741d8"
+  version = "kubernetes-1.13.1"
+  #revision = "3ccfe8365421eb08e334b195786a2973460741d8"
 
 [[override]]
   name = "k8s.io/apiextensions-apiserver"
-  #version = "kubernetes-1.13.1"
-  revision = "0fe22c71c47604641d9aa352c785b7912c200562"
+  version = "kubernetes-1.13.1"
+  #revision = "0fe22c71c47604641d9aa352c785b7912c200562"
 
 # Required for k8s.io/kubernetes
 [[override]]

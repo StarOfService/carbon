@@ -3,10 +3,10 @@ package versioned
 import (
   "fmt"
   "regexp"
-  "github.com/pkg/errors"
-  "github.com/sirupsen/logrus"
 
   "github.com/blang/semver"
+  "github.com/pkg/errors"
+  "github.com/sirupsen/logrus"
 )
 
 var re = regexp.MustCompile(`^(?:[a-zA-Z]+/)?v(\d)(?:(alpha|beta)(\d))?$`)
@@ -65,21 +65,8 @@ func (self *SchemaHandler) upgradeToLatest(vc VersionedConfig) (VersionedConfig,
     if err != nil {
       return nil, errors.Wrap(err, "parsing api version") 
   }
-  // currentSemver, err := semver.Parse(vc.GetVersion())
-  // if err != nil {
-  //   currentSemver, err = semverParse(vc.GetVersion())
-  //   if err != nil {
-  //     return nil, errors.Wrap(err, "parsing api version") 
-  //   }
-  //   // return nil, errors.Wrap(err, "parsing api version")
-  // }
-
 
   latestSemver := semverMustParse(self.LatestVersion)
-  // latestSemver, err := semver.Parse(self.LatestVersion)
-  // if err != nil {
-  //   latestSemver = semverMustParse(self.LatestVersion)
-  // }
 
   if currentSemver.EQ(latestSemver) {
     return vc, nil
@@ -115,19 +102,6 @@ func semverParse(v string) (semver.Version, error) {
   sv := semverNormalize(v)
   return semver.Parse(sv)
 }
-
-
-
-// func semverParse(v string) (semver.Version, error) {
-//   res := re.FindStringSubmatch(v)
-//   if res == nil {
-//     return semver.Version{}, fmt.Errorf("%s is an invalid api version", v)
-//   }
-//   if res[2] == "" || res[3] == "" {
-//     return semver.Parse(fmt.Sprintf("%s.0.0", res[1]))
-//   }
-//   return semver.Parse(fmt.Sprintf("%s.0.0-%s.%s", res[1], res[2], res[3]))
-// }
 
 func semverMustParse(s string) semver.Version {
   v, err := semverParse(s)

@@ -2,9 +2,9 @@ package latest
 
 import (
   "encoding/json"
+
   "github.com/starofservice/carbon/pkg/schema/versioned"
 )
-
 
 const Version string = "v1alpha1"
 

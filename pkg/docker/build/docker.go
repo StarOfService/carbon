@@ -2,12 +2,10 @@ package build
 
 import (
   "context"
-  // "fmt"
-  "strings"
+  "encoding/base64"
+  "encoding/json"
   "os"
-
-  log "github.com/sirupsen/logrus"
-  "github.com/pkg/errors"
+  "strings"
 
   clibuild "github.com/docker/cli/cli/command/image/build"
   "github.com/docker/docker/api/types"
@@ -16,87 +14,71 @@ import (
   "github.com/docker/docker/pkg/idtools"
   "github.com/docker/docker/pkg/jsonmessage"
   "github.com/docker/docker/pkg/term"
+  "github.com/pkg/errors"
+  log "github.com/sirupsen/logrus"
 
-  // rootcfglatest "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
+  dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
   "github.com/starofservice/carbon/pkg/schema/rootcfg"
-
 )
 
-// https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
-// https://github.com/moby/moby/blob/v1.13.1/api/types/client.go#L142-L178
 type BuildOptions struct {
-  Tags      []string
-  Labels    map[string]string
-  BuildArgs map[string]*string
-  // Quiet     bool
-  NoCache   bool
-  Squash    bool
+  Client *client.Client
+  ContextPath string
+  RootConfig *rootcfg.CarbonConfig
 }
 
-func NewBuildOptions() *BuildOptions {
-  return new(BuildOptions)
+func NewBuildOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*BuildOptions, error) {
+  cli, err := client.NewEnvClient()
+  if err != nil {
+    return nil, errors.Wrap(err, "creating Docker client")
+  }
+
+  resp := &BuildOptions{
+    Client: cli,
+    ContextPath: ctxPath,
+    RootConfig: cfg,
+  }
+
+  return resp, nil
 }
 
-func (o *BuildOptions) Build(cfg *rootcfg.CarbonConfig, ctxPath string, metadata map[string]string) error {
+// https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
+func (self *BuildOptions) Build(metadata map[string]string) error {
   log.Debug("Building docker image")
 
-  excludes, err := clibuild.ReadDockerignore(ctxPath)
+  excludes, err := clibuild.ReadDockerignore(self.ContextPath)
   if err != nil {
-    // log.Fatalf("Failed to read Dockerignore file due to the error: %s", err.Error())
-    // os.Exit(1)
     return errors.Wrap(err, "reading dockerignore file")
   }
 
-  // if err := build.ValidateContextDirectory(contextDir, excludes); err != nil {
-  //   return errors.Errorf("error checking context: '%s'.", err)
-  // }
+  excludes = clibuild.TrimBuildFilesFromExcludes(excludes, self.RootConfig.Data.Dockerfile, false)
 
-  // relDockerfile string
-
-  // // And canonicalize dockerfile name to a platform-independent one
-  // relDockerfile = archive.CanonicalTarNameForPath(relDockerfile)
-
-  excludes = clibuild.TrimBuildFilesFromExcludes(excludes, cfg.Data.Dockerfile, false)
-
-  ctx, err := archive.TarWithOptions(ctxPath, &archive.TarOptions{
+  ctx, err := archive.TarWithOptions(self.ContextPath, &archive.TarOptions{
     ExcludePatterns: excludes,
     ChownOpts:       &idtools.Identity{UID: 0, GID: 0},
   })
   if err != nil {
-    // log.Fatalf("Failed to create Docker build context due to the error: %s", err.Error())
-    // os.Exit(1)
     return errors.Wrap(err, "creating Docker build context")
   }
 
   // https://github.com/docker/engine/blob/v18.09.0/api/types/client.go#L143-L190
   opt := types.ImageBuildOptions{
-    // BuildArgs:   args,
     Context:     ctx,
-    Dockerfile:  cfg.Data.Dockerfile,
+    Dockerfile:  self.RootConfig.Data.Dockerfile,
     ForceRemove: true,
     Labels:      metadata,
     NoCache:     true,
     PullParent:  true,
     Remove:      true,
-    Tags:        buildOptionsTags(cfg),
+    Tags:        self.tags(),
   }
 
   if suppressOutput() {
     opt.SuppressOutput = true  
   }
-    
-  cli, err := client.NewEnvClient()
-  if err != nil {
-    // log.Fatalf("Failed to create Docker client due to the error: %s", err.Error())
-    // os.Exit(1)
-    return errors.Wrap(err, "creating Docker client")
-  }
 
-  response, err := cli.ImageBuild(context.Background(), ctx, opt)
+  response, err := self.Client.ImageBuild(context.Background(), ctx, opt)
   if err != nil {
-    // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L405-L411
-    // log.Fatalf("Failed to build Docker image due to the error: %s", err.Error())
-    // os.Exit(1)
     return errors.Wrap(err, "building Docker image")
   }
 
@@ -110,7 +92,6 @@ func (o *BuildOptions) Build(cfg *rootcfg.CarbonConfig, ctxPath string, metadata
 
 func suppressOutput() bool {
   logLevel := log.GetLevel().String()
-  // if logLevel == "warning" || logLevel == "error" || logLevel == "fatal" || logLevel == "panic" {
   switch logLevel {
   case "warning", "error", "fatal", "panic":
     return true
@@ -118,12 +99,51 @@ func suppressOutput() bool {
   return false
 }
 
-func buildOptionsTags(cfg *rootcfg.CarbonConfig) []string {
-  var tags []string
-  tags = append(tags, buildTag(cfg.Data.Name, cfg.Data.Version))
-  tags = append(tags, buildTag(cfg.Data.Name, "latest"))
-  tags = append(tags, cfg.Data.Artifacts...)
+func (self *BuildOptions) Push() error {
+  termFd, isTerm := term.GetFdInfo(os.Stderr)
+  for _, i := range self.tags() {
+    meta := dockermeta.NewDockerMeta(i)
+    username, password, err := meta.GetCredentials()
+    if err != nil {
+      return errors.Wrap(err, "getting registry credentials")
+    }
 
+    auth := types.AuthConfig{
+      Username: username,
+      Password: password,
+    }
+    authBytes, _ := json.Marshal(auth)
+    authBase64 := base64.URLEncoding.EncodeToString(authBytes)
+
+    opt := types.ImagePushOptions{
+      RegistryAuth: authBase64,
+    }
+
+    response, err := self.Client.ImagePush(context.Background(), i, opt)
+    if err != nil {
+      return errors.Wrapf(err, "pushing `%s` docker images", i)
+    }
+    defer response.Close()
+
+    jsonmessage.DisplayJSONMessagesStream(response, os.Stderr, termFd, isTerm, nil)
+  }
+  return nil
+}
+
+func (self *BuildOptions) tags() []string {
+  var tags []string
+  if len(self.RootConfig.Data.Artifacts) > 0 {
+    for _, i := range self.RootConfig.Data.Artifacts {
+      parts := strings.Split(i, ":")
+      if len(parts) == 1 {
+        tags = append(tags, buildTag(parts[0], self.RootConfig.Data.Version))
+      } else {
+        tags = append(tags, i)
+      }
+    }
+  } else {
+    tags = append(tags, buildTag(self.RootConfig.Data.Name, self.RootConfig.Data.Version))
+  }
   return tags
 }
 

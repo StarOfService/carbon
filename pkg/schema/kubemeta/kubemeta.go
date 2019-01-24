@@ -2,23 +2,20 @@ package kubemeta
 
 import (
   "encoding/json"
-  "github.com/pkg/errors"
   "fmt"
   "strings"
-  // "io/ioutil"
-  // log "github.com/sirupsen/logrus"
-  typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+
   apicorev1 "k8s.io/api/core/v1"
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+  typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
+  "github.com/pkg/errors"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
-  "github.com/starofservice/carbon/pkg/schema/versioned"
-
   "github.com/starofservice/carbon/pkg/schema/kubemeta/latest"
+  "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
 const (
-  // defaultKubeNamespace = "default"
   metaObjectPrefix = "carbon-package-metadata-"
   metaObjectLabelKey = "carbon/type"
   metaObjectLabelValue = "package-metadata"
@@ -40,19 +37,13 @@ func GetCurrentVersion(data []byte) (string, error) {
   return apiVersion.Version, nil
 }
 
-// struct KubeMetadata latest.KubeMetadata
 type KubeMetaHandler struct {
  Data latest.KubeMetadata
  Namespace string
 }
 
-// func ParseKubeMetaHandler(body []byte) (*KubeMetaHandler, error) {
 func Get(name, ns string) (*KubeMetaHandler, error) {
   // log.Debug("Processing Kubernete metadata")
-  // metaName := metaObjectPrefix + name
-  // if ns == "" {
-  //   ns = defaultKubeNamespace
-  // }
 
   secretHandler, err := getSecretHandler(ns)
   if err != nil {
@@ -63,34 +54,8 @@ func Get(name, ns string) (*KubeMetaHandler, error) {
   if err != nil {
     return nil, err
   }
-  // data := secretObject.Data[metaObjectKey]
 
-  // current, err := GetCurrentVersion(data)
-  // if err != nil {
-  //   return nil, err
-  // }
-
-  // sh := versioned.NewSchemaHandler(current, latest.Version)
-  // for k, v := range schemaVersions {
-  //   sh.RegVersion(k, v)
-  // }
-  // // sh.RegVersion(latest.Version, latest.NewKubeMetadata)
-
-  // cfg, err := sh.GetLatestConfig(data)
-  // if err != nil {
-  //   return nil, err
-  // }
-
-  // parsedCfg := cfg.(*latest.KubeMetadata)
-  // km := &KubeMetaHandler{
-  //   Data: *parsedCfg,
-  //   Namespace: "",
-  // }
-  // // parsedCfg := cfg.(*latest.KubeMetadata)
-  // // return parsedCfg, nil
-  // return km, nil
   return secretToKubeMetaHandler(secretObject)
-
 }
 
 
@@ -130,7 +95,6 @@ func secretToKubeMetaHandler(secret *apicorev1.Secret) (*KubeMetaHandler, error)
   for k, v := range schemaVersions {
     sh.RegVersion(k, v)
   }
-  // sh.RegVersion(latest.Version, latest.NewKubeMetadata)
 
   cfg, err := sh.GetLatestConfig(data)
   if err != nil {
@@ -142,15 +106,11 @@ func secretToKubeMetaHandler(secret *apicorev1.Secret) (*KubeMetaHandler, error)
     Data: *parsedCfg,
     Namespace: "",
   }
-  // parsedCfg := cfg.(*latest.KubeMetadata)
-  // return parsedCfg, nil
+
   return km, nil
 }
 
 func New(kd *kubernetes.KubeDeployment, patches []byte, ns string) *KubeMetaHandler {
-  // if ns == "" {
-  //   ns = defaultKubeNamespace
-  // }
 
   source := kd.Variables.Pkg.DockerName + ":" + kd.Variables.Pkg.DockerTag
   return &KubeMetaHandler{
@@ -173,7 +133,6 @@ func (self *KubeMetaHandler) Apply() error {
     return err
   }
 
-  // metaName := metaObjectPrefix + self.Data.Name
   meta := &apicorev1.Secret{
     ObjectMeta: metav1.ObjectMeta{
       Labels: map[string]string{metaObjectLabelKey: metaObjectLabelValue},
@@ -183,15 +142,6 @@ func (self *KubeMetaHandler) Apply() error {
     Data: map[string][]byte{metaObjectKey: data},
   }
 
-  // kubeConfig, err := kubernetes.GetKubeConfig()
-  // if err != nil {
-  //   return err
-  // }
-  // coreV1Client, err := typedcorev1.NewForConfig(kubeConfig)
-  // if err != nil {
-  //   return err
-  // }
-  // secretHandler := coreV1Client.Secrets(self.Namespace)
   secretHandler, err := getSecretHandler(self.Namespace)
   if err != nil {
     return err
@@ -213,15 +163,7 @@ func (self *KubeMetaHandler) Apply() error {
       return err
     }
   }
-  // fmt.Println("Getting item:")
-  // fmt.Println(item)
-  // fmt.Println(err)
 
-
-  // _, err = secretHandler.Create(meta)
-  // if err != nil {
-  //   return err
-  // }
   return nil
 }
 

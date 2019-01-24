@@ -2,13 +2,13 @@ package tojson
 
 import (
   "bytes"
-  "fmt"
-  "io"
-  // "os"
   "encoding/json"
+  "fmt"
   "gopkg.in/yaml.v2"
-  "github.com/pkg/errors"
+  "io"
+
   ghodssyaml "github.com/ghodss/yaml"
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 )
 
@@ -26,9 +26,7 @@ func ToJson(data []byte) ([]byte, error) {
   }
 
   if err := checkYaml(data); err != nil {
-    // log.Fatal("Failed to verify YAML document due to the error: ", err.Error())
     log.Fatalf("Document:\n%s", data)
-    // os.Exit(1)
     return nil, errors.Wrap(err, "verifying YAML document")
   }
 
@@ -42,9 +40,7 @@ func ToJson(data []byte) ([]byte, error) {
     }
     jd, err := ghodssyaml.YAMLToJSON(d)
     if err != nil {
-      // log.Fatal("Failed to convert YAML document to JSON format due to the error: ", err.Error())
       log.Fatalf("Document:\n%s", d)
-      // os.Exit(1)
       return []byte{}, errors.Wrap(err, "converting YAML document to JSON format")
     }
     jsonDocs = append(jsonDocs, jd)
@@ -54,9 +50,7 @@ func ToJson(data []byte) ([]byte, error) {
 
   // Checking response format because plain text may be considered as a valid YAML format
   if err := checkJson(resp); err != nil {
-    // log.Fatal("Failed to verify JSON document after the YAML->JSON convertion due to the error: ", err.Error())
     log.Fatalf("Document:\n%s", data)
-    // os.Exit(1)
     return []byte{}, errors.Wrap(err, "verifying JSON document after the YAML->JSON convertion")
   }
 
@@ -81,7 +75,6 @@ func checkJson(data []byte) error {
         return nil
     }
     if err != nil {
-      // TODO DEBUG
       log.Debugf("Failed to unmarshal JSON data due to the error: ", err.Error())
       return err
     }
@@ -98,9 +91,7 @@ func checkYaml(data []byte) error {
         return nil
     }
     if err != nil {
-      // TODO DEBUG
       log.Debugf("Failed to unmarshal YAML data due to the error: ", err.Error())
-      
       return err
     }
   }

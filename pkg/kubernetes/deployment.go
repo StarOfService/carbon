@@ -3,22 +3,14 @@ package kubernetes
 import (
   "bytes"
   "fmt"
-  // "io/ioutil"
-  // "path/filepath"
-  // "strings"
-  "github.com/pkg/errors"
   "text/template"
-  // "os"
-  // "time"
-  // "regexp"
-  // "encoding/base64"
+
+  "github.com/pkg/errors"
+  log "github.com/sirupsen/logrus"
+
+  "github.com/starofservice/carbon/pkg/schema/pkgmeta"
   "github.com/starofservice/carbon/pkg/util/tojson"
   "github.com/starofservice/carbon/pkg/util/base64"
-  // pkgmetalatest "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
-  "github.com/starofservice/carbon/pkg/schema/pkgmeta"
-  log "github.com/sirupsen/logrus"
-  // "github.com/starofservice/carbon/pkg/util/tojson"
-  // sigsk8syaml "sigs.k8s.io/yaml"
 )
 
 type DepVarsPkg struct {
@@ -55,7 +47,7 @@ func NewKubeDeployment(meta *pkgmeta.PackageConfig, dname string, dtag string) (
         Version: meta.Data.PkgVersion,
         DockerName: dname,
         DockerTag: dtag,
-      }, //make(map[string]string),
+      },
       Var: make(map[string]string),
     },
   }
@@ -86,24 +78,18 @@ func (self *KubeDeployment) Build() error {
 
   tpl, err := template.New("kubeManifest").Option("missingkey=zero").Parse(string(self.RawManifest))
   if err != nil {
-    // log.Fatalf("Failed to parse kuberentese manifests teamplate due to the error: %s", err.Error())
-    // os.Exit(1)
     return errors.Wrap(err, "parsing Kuberentese manifests teamplate")
   }
 
   buf := &bytes.Buffer{}
   err = tpl.Execute(buf, self.Variables)
   if err != nil {
-    // log.Fatalf("Failed to build kuberentese manifests teamplate due to the error: %s", err.Error())
-    // os.Exit(1)
     return errors.Wrap(err, "building Kuberentese manifests")
   }
 
   self.BuiltManifest, err = tojson.ToJson(buf.Bytes())
   if err != nil {
     return errors.Wrap(err, "converting Kuberentese manifests to JSON")
-    // log.Fatalf("...")
-    // os.Exit(1)
   }
 
   return nil
@@ -123,13 +109,10 @@ patch:
       carbon/component-version: %s
 `, self.Variables.Pkg.Name, self.Variables.Pkg.Version)
   
-  // patch := [][]byte{[]byte(ops)}
   patch, err := tojson.ToJson([]byte(ops))
   if err != nil {
     log.Fatal("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
     return errors.Wrap(err, "converting Kubernetes patch with Carbon labels to JSON")
-    // log.Fatalf("...")
-    // os.Exit(1)
   }
   if err := self.ProcessPatches(patch); err != nil {
     return err
