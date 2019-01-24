@@ -195,7 +195,7 @@ func parsePatches() ([]byte, error) {
 
   var resp []byte
   for _, i := range rawPatches {
-    ni, err := tojson.ToJson(i)
+    ni, err := tojson.ToJSON(i)
     if err != nil {
       return nil, err
     }

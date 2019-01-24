@@ -17,19 +17,19 @@ const (
   carbonMetaLabel = "carbon-package-metadata"
 )
 
-var schemaVersions = map[string]func() versioned.VersionedConfig{
+var schemaVersions = map[string]func() versioned.ConfigHandler{
   latest.Version: latest.NewPackageConfig,
 }
 
 func GetCurrentVersion(data []byte) (string, error) {
-  type APIVersion struct {
-    Version string `json:"apiVersion"`
+  type VersionStruct struct {
+    APIVersion string `json:"apiVersion"`
   }
-  apiVersion := &APIVersion{}
-  if err := json.Unmarshal(data, apiVersion); err != nil {
+  version := &VersionStruct{}
+  if err := json.Unmarshal(data, version); err != nil {
     return "", errors.Wrap(err, "parsing api version")
   }
-  return apiVersion.Version, nil
+  return version.APIVersion, nil
 }
 
 type PackageConfig struct {
@@ -42,7 +42,7 @@ func New(mainCfg *rootcfg.CarbonConfig, rawMainCfg, rawKubeCfg []byte) *PackageC
 
   p := &PackageConfig{
     Data: latest.PackageConfig{
-      ApiVersion: latest.Version,
+      APIVersion: latest.Version,
       PkgName: mainCfg.Data.Name,
       PkgVersion: mainCfg.Data.Version,
       BuildTime: time.Now().Unix(),

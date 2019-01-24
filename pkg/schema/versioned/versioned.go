@@ -11,32 +11,31 @@ import (
 
 var re = regexp.MustCompile(`^(?:[a-zA-Z]+/)?v(\d)(?:(alpha|beta)(\d))?$`)
 
-type VersionedConfig interface {
+type ConfigHandler interface {
   GetVersion() string
   Parse([]byte) error
-  Upgrade() (VersionedConfig, error)
+  Upgrade() (ConfigHandler, error)
 }
-
 
 type SchemaHandler struct {
   CurrentVersion string
   LatestVersion string
-  SchemaVersions map[string]func() VersionedConfig
+  SchemaVersions map[string]func() ConfigHandler
 }
 
 func NewSchemaHandler(current, latest string) *SchemaHandler {
   return &SchemaHandler{
     CurrentVersion: current,
     LatestVersion: latest,
-    SchemaVersions: make(map[string]func() VersionedConfig),
+    SchemaVersions: make(map[string]func() ConfigHandler),
   }
 }
 
-func (self *SchemaHandler) RegVersion(version string, handler func() VersionedConfig) {
+func (self *SchemaHandler) RegVersion(version string, handler func() ConfigHandler) {
   self.SchemaVersions[version] = handler
 }
 
-func (self *SchemaHandler) GetLatestConfig(body []byte) (VersionedConfig, error) {
+func (self *SchemaHandler) GetLatestConfig(body []byte) (ConfigHandler, error) {
   factory, ok := self.SchemaVersions[self.CurrentVersion]
   if !ok {
     return nil, errors.Errorf("unknown api version: '%s'", self.CurrentVersion)
@@ -57,7 +56,7 @@ func (self *SchemaHandler) GetLatestConfig(body []byte) (VersionedConfig, error)
   return cfg, nil
 }
 
-func (self *SchemaHandler) upgradeToLatest(vc VersionedConfig) (VersionedConfig, error) {
+func (self *SchemaHandler) upgradeToLatest(vc ConfigHandler) (ConfigHandler, error) {
   var err error
 
   // first, check to make sure config version isn't too new

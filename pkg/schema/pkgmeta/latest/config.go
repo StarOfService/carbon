@@ -15,7 +15,7 @@ type PackageConfigVariable struct {
 }
 
 type PackageConfig struct {
-  ApiVersion    string                  `json:"apiVersion"`
+  APIVersion    string                  `json:"apiVersion"`
   PkgName       string                  `json:"pkgName"`
   PkgVersion    string                  `json:"pkgVersion"`
   BuildTime     int64                   `json:"buildtime"`
@@ -24,12 +24,12 @@ type PackageConfig struct {
   Variables     []PackageConfigVariable `json:"variables"`
 }
 
-func NewPackageConfig() versioned.VersionedConfig {
+func NewPackageConfig() versioned.ConfigHandler {
   return new(PackageConfig)
 }
 
 func (c *PackageConfig) GetVersion() string {
-  return c.ApiVersion
+  return c.APIVersion
 }
 
 

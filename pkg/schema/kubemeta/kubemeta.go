@@ -22,27 +22,27 @@ const (
   metaObjectKey = "metadata"
 )
 
-var schemaVersions = map[string]func() versioned.VersionedConfig{
+var schemaVersions = map[string]func() versioned.ConfigHandler{
   latest.Version: latest.NewKubeMetadata,
 }
 
 func GetCurrentVersion(data []byte) (string, error) {
-  type APIVersion struct {
-    Version string `json:"apiVersion"`
+  type VersionStruct struct {
+    APIVersion string `json:"apiVersion"`
   }
-  apiVersion := &APIVersion{}
-  if err := json.Unmarshal(data, apiVersion); err != nil {
+  version := &VersionStruct{}
+  if err := json.Unmarshal(data, version); err != nil {
     return "", errors.Wrap(err, "parsing api version")
   }
-  return apiVersion.Version, nil
+  return version.APIVersion, nil
 }
 
-type KubeMetaHandler struct {
+type Handler struct {
  Data latest.KubeMetadata
  Namespace string
 }
 
-func Get(name, ns string) (*KubeMetaHandler, error) {
+func Get(name, ns string) (*Handler, error) {
   // log.Debug("Processing Kubernete metadata")
 
   secretHandler, err := getSecretHandler(ns)
@@ -55,11 +55,11 @@ func Get(name, ns string) (*KubeMetaHandler, error) {
     return nil, err
   }
 
-  return secretToKubeMetaHandler(secretObject)
+  return secretToHandler(secretObject)
 }
 
 
-func GetAll(ns string) ([]*KubeMetaHandler, error) {
+func GetAll(ns string) ([]*Handler, error) {
   secretHandler, err := getSecretHandler(ns)
   if err != nil {
     return nil, err
@@ -71,9 +71,9 @@ func GetAll(ns string) ([]*KubeMetaHandler, error) {
     return nil, err
   }
 
-  var resp []*KubeMetaHandler
+  var resp []*Handler
   for _, i := range slist.Items {
-    km, err := secretToKubeMetaHandler(&i)
+    km, err := secretToHandler(&i)
     if err != nil {
       return nil, err
     }
@@ -83,7 +83,7 @@ func GetAll(ns string) ([]*KubeMetaHandler, error) {
   return resp, nil
 }
 
-func secretToKubeMetaHandler(secret *apicorev1.Secret) (*KubeMetaHandler, error) {
+func secretToHandler(secret *apicorev1.Secret) (*Handler, error) {
   data := secret.Data[metaObjectKey]
 
   current, err := GetCurrentVersion(data)
@@ -102,7 +102,7 @@ func secretToKubeMetaHandler(secret *apicorev1.Secret) (*KubeMetaHandler, error)
   }
 
   parsedCfg := cfg.(*latest.KubeMetadata)
-  km := &KubeMetaHandler{
+  km := &Handler{
     Data: *parsedCfg,
     Namespace: "",
   }
@@ -110,12 +110,12 @@ func secretToKubeMetaHandler(secret *apicorev1.Secret) (*KubeMetaHandler, error)
   return km, nil
 }
 
-func New(kd *kubernetes.KubeDeployment, patches []byte, ns string) *KubeMetaHandler {
+func New(kd *kubernetes.KubeDeployment, patches []byte, ns string) *Handler {
 
   source := kd.Variables.Pkg.DockerName + ":" + kd.Variables.Pkg.DockerTag
-  return &KubeMetaHandler{
+  return &Handler{
     Data: latest.KubeMetadata{
-      ApiVersion: latest.Version,
+      APIVersion: latest.Version,
       Name: kd.Variables.Pkg.Name,
       Version: kd.Variables.Pkg.Version,
       Source: source,
@@ -127,7 +127,7 @@ func New(kd *kubernetes.KubeDeployment, patches []byte, ns string) *KubeMetaHand
   }
 }
 
-func (self *KubeMetaHandler) Apply() error {
+func (self *Handler) Apply() error {
   data, err := json.Marshal(self.Data)
   if err != nil {
     return err

@@ -6,6 +6,6 @@ import (
   "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
-func (c *CarbonConfig) Upgrade() (versioned.VersionedConfig, error) {
+func (c *CarbonConfig) Upgrade() (versioned.ConfigHandler, error) {
   return nil, errors.New("not implemented yet")
 }

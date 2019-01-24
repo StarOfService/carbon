@@ -9,7 +9,7 @@ import (
 const Version string = "v1alpha1"
 
 type KubeMetadata struct {
-  ApiVersion    string            `json:"apiVersion"`
+  APIVersion    string            `json:"apiVersion"`
   Name          string            `json:"name"`
   Version       string            `json:"version"`
   Source        string            `json:"source"`
@@ -20,12 +20,12 @@ type KubeMetadata struct {
   // dependencies
 }
 
-func NewKubeMetadata() versioned.VersionedConfig {
+func NewKubeMetadata() versioned.ConfigHandler {
   return new(KubeMetadata)
 }
 
 func (c *KubeMetadata) GetVersion() string {
-  return c.ApiVersion
+  return c.APIVersion
 }
 
 func (c *KubeMetadata) Parse(data []byte) error {

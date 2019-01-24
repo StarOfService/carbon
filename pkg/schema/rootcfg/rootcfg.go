@@ -11,7 +11,7 @@ import (
   "github.com/starofservice/carbon/pkg/util/command"
 )
 
-var schemaVersions = map[string]func() versioned.VersionedConfig{
+var schemaVersions = map[string]func() versioned.ConfigHandler{
   latest.Version: latest.NewCarbonConfig,
 }
 
@@ -21,14 +21,14 @@ const (
 )
 
 func GetCurrentVersion(data []byte) (string, error) {
-  type APIVersion struct {
-    Version string `yaml:"apiVersion"`
+  type VersionStruct struct {
+    APIVersion string `yaml:"apiVersion"`
   }
-  apiVersion := &APIVersion{}
-  if err := yaml.Unmarshal(data, apiVersion); err != nil {
+  version := &VersionStruct{}
+  if err := yaml.Unmarshal(data, version); err != nil {
     return "", errors.Wrap(err, "parsing api version")
   }
-  return apiVersion.Version, nil
+  return version.APIVersion, nil
 }
 
 type CarbonConfig struct {
@@ -65,15 +65,13 @@ func (self *CarbonConfig) HookDefined(hookType string) bool {
   case HookPreBuild:
     if len(self.Data.Hooks.PreBuild) > 0 {
       return true
-    } else {
-      return false
     }
+    return false
   case HookPostBuild:
     if len(self.Data.Hooks.PostBuild) > 0 {
       return true
-    } else {
-      return false
     }
+    return false
   default:
     return false
   }

@@ -21,19 +21,19 @@ import (
   "github.com/starofservice/carbon/pkg/schema/rootcfg"
 )
 
-type BuildOptions struct {
+type Options struct {
   Client *client.Client
   ContextPath string
   RootConfig *rootcfg.CarbonConfig
 }
 
-func NewBuildOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*BuildOptions, error) {
+func NewOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*Options, error) {
   cli, err := client.NewEnvClient()
   if err != nil {
     return nil, errors.Wrap(err, "creating Docker client")
   }
 
-  resp := &BuildOptions{
+  resp := &Options{
     Client: cli,
     ContextPath: ctxPath,
     RootConfig: cfg,
@@ -43,7 +43,7 @@ func NewBuildOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*BuildOptions, 
 }
 
 // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
-func (self *BuildOptions) Build(metadata map[string]string) error {
+func (self *Options) Build(metadata map[string]string) error {
   log.Debug("Building docker image")
 
   excludes, err := clibuild.ReadDockerignore(self.ContextPath)
@@ -99,7 +99,7 @@ func suppressOutput() bool {
   return false
 }
 
-func (self *BuildOptions) Push() error {
+func (self *Options) Push() error {
   termFd, isTerm := term.GetFdInfo(os.Stderr)
   for _, i := range self.tags() {
     meta := dockermeta.NewDockerMeta(i)
@@ -130,7 +130,7 @@ func (self *BuildOptions) Push() error {
   return nil
 }
 
-func (self *BuildOptions) tags() []string {
+func (self *Options) tags() []string {
   var tags []string
   if len(self.RootConfig.Data.Artifacts) > 0 {
     for _, i := range self.RootConfig.Data.Artifacts {

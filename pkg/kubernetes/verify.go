@@ -42,13 +42,12 @@ func (self *KubeDeployment) VerifyTpl(path string) error {
   err = tpl.Execute(&data, self.Variables)
   if err != nil {
     if strings.Index(err.Error(), "no entry for key") != -1 || strings.Index(err.Error(), "can't evaluate field") != -1 {
-      return fmt.Errorf("%s\nPlease use make sure that all variables are defined at carbon.yaml and use `.Var` prefix for the variables at kubernetes config files.", err.Error())
-    } else {
-      return errors.Wrap(err, "building Kuberentese manifests template")
+      return fmt.Errorf("%s\nPlease make sure that all variables are defined at carbon.yaml and use `.Var` prefix for the variables at kubernetes config files", err.Error())
     }
+    return errors.Wrap(err, "building Kuberentese manifests template")
   }
 
-  _, err = tojson.ToJson(data.Bytes())
+  _, err = tojson.ToJSON(data.Bytes())
   if err != nil {
     return errors.Wrap(err, "converting Kuberentese manifests to JSON")
   }

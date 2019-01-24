@@ -20,7 +20,7 @@ type CarbonConfigHooks struct {
 }
 
 type CarbonConfig struct {
-  ApiVersion    string     `yaml:"apiVersion"`
+  APIVersion    string     `yaml:"apiVersion"`
   Name          string     `yaml:"name"`
   Version       string     `yaml:"version"`
   Dockerfile    string     `yaml:"dockerfile"`
@@ -32,12 +32,12 @@ type CarbonConfig struct {
   // dependencies
 }
 
-func NewCarbonConfig() versioned.VersionedConfig {
+func NewCarbonConfig() versioned.ConfigHandler {
   return new(CarbonConfig)
 }
 
 func (c *CarbonConfig) GetVersion() string {
-  return c.ApiVersion
+  return c.APIVersion
 }
 
 func (c *CarbonConfig) Parse(contents []byte) error {

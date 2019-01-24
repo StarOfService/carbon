@@ -17,15 +17,15 @@ const (
   yamlSep = "---"
 )
 
-func ToJson(data []byte) ([]byte, error) {
+func ToJSON(data []byte) ([]byte, error) {
   log.Debug("Normalizing config data")
   log.Tracef("Input data: %s", string(data))
 
-  if err := checkJson(data); err == nil {
+  if err := checkJSON(data); err == nil {
     return data, nil
   }
 
-  if err := checkYaml(data); err != nil {
+  if err := checkYAML(data); err != nil {
     log.Fatalf("Document:\n%s", data)
     return nil, errors.Wrap(err, "verifying YAML document")
   }
@@ -49,7 +49,7 @@ func ToJson(data []byte) ([]byte, error) {
   resp := bytes.Join(jsonDocs, []byte(""))
 
   // Checking response format because plain text may be considered as a valid YAML format
-  if err := checkJson(resp); err != nil {
+  if err := checkJSON(resp); err != nil {
     log.Fatalf("Document:\n%s", data)
     return []byte{}, errors.Wrap(err, "verifying JSON document after the YAML->JSON convertion")
   }
@@ -60,7 +60,7 @@ func ToJson(data []byte) ([]byte, error) {
 
 // json.Valid considers multi-document as a wrong JSON format.
 // That's why we need a custom function.
-func checkJson(data []byte) error {
+func checkJSON(data []byte) error {
   log.Debug("Trying to verify JSON document")
   trimData := bytes.TrimSpace(data)
   if !bytes.HasPrefix(trimData, []byte(jsonPrefix)) {
@@ -81,7 +81,7 @@ func checkJson(data []byte) error {
   }
 }
 
-func checkYaml(data []byte) error {
+func checkYAML(data []byte) error {
   log.Debug("Trying to verify YAML document")
   dec := yaml.NewDecoder(bytes.NewReader(data))
   for {

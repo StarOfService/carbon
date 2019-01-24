@@ -22,15 +22,14 @@ func GetKubeConfig() (*restclient.Config, error) {
       &clientcmd.ClientConfigLoadingRules{ExplicitPath: configPath},
       &clientcmd.ConfigOverrides{CurrentContext: minikube.K8sContext},
     ).ClientConfig()
-  } else {
-    return clientcmd.BuildConfigFromFlags("", configPath)
   }
+
+  return clientcmd.BuildConfigFromFlags("", configPath)
 }
 
 func kubeCinfigPath() (string, error) {
   if home := homedir.Path(); home != "" {
     return filepath.Join(home, ".kube", "config"), nil
-  } else {
-    return "", fmt.Errorf("Unable to discover a user home directory")
   }
+  return "", fmt.Errorf("Unable to discover a user home directory")
 }

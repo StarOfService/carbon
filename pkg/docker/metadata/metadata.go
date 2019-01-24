@@ -50,9 +50,8 @@ func (self *DockerMeta) GetLabels() (map[string]string, error) {
   resp, err := self.getLocalImageLabels()
   if err == nil {
     return resp, nil
-  } else {
-    log.Debug("Got an error: %s", err.Error())
   }
+  log.Debug("Got an error: %s", err.Error())
 
   sys := &types.SystemContext{
     OSChoice: kubeImageOS,

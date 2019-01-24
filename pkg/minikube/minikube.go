@@ -25,9 +25,8 @@ func CheckStatus() error {
       status := strings.TrimSpace(strings.Replace(raw, "minikube:", "", -1))
       if strings.EqualFold(status, "Running") {
         return nil
-      } else {
-        return errors.Errorf("Wrong minikube status. Expected 'Running', but got: %s", status)
       }
+      return errors.Errorf("Wrong minikube status. Expected 'Running', but got: %s", status)
     }
   }
   return errors.Errorf("Unable to define minikube status")

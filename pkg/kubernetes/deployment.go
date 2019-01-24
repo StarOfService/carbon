@@ -87,7 +87,7 @@ func (self *KubeDeployment) Build() error {
     return errors.Wrap(err, "building Kuberentese manifests")
   }
 
-  self.BuiltManifest, err = tojson.ToJson(buf.Bytes())
+  self.BuiltManifest, err = tojson.ToJSON(buf.Bytes())
   if err != nil {
     return errors.Wrap(err, "converting Kuberentese manifests to JSON")
   }
@@ -109,7 +109,7 @@ patch:
       carbon/component-version: %s
 `, self.Variables.Pkg.Name, self.Variables.Pkg.Version)
   
-  patch, err := tojson.ToJson([]byte(ops))
+  patch, err := tojson.ToJSON([]byte(ops))
   if err != nil {
     log.Fatal("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
     return errors.Wrap(err, "converting Kubernetes patch with Carbon labels to JSON")

@@ -104,10 +104,10 @@ func getAllResources() ([]string, error) {
     return nil, err
   }
 
-  return procApiResList(apiResList), nil
+  return procAPIResList(apiResList), nil
 }
 
-func procApiResList (apiResList []*metav1.APIResourceList) []string {
+func procAPIResList (apiResList []*metav1.APIResourceList) []string {
   crdResMap := make(map[string]struct{})
   genResMap := make(map[string]struct{})
   for _, rl := range apiResList {
@@ -134,11 +134,11 @@ func procApiResList (apiResList []*metav1.APIResourceList) []string {
   }
 
   var resources []string
-  for k, _ := range genResMap {
+  for k := range genResMap {
     resources = append(resources, k)
   }
   // CRDs must be checked at a very last order
-  for k, _ := range crdResMap {
+  for k := range crdResMap {
     resources = append(resources, k)
   }
   return resources

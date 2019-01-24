@@ -109,7 +109,7 @@ func runBuild() {
   }
 
   log.Info("Building Carbon package")
-  dockerBuild, err := dockerbuild.NewBuildOptions(cfg, filepath.Dir(cfgPath))
+  dockerBuild, err := dockerbuild.NewOptions(cfg, filepath.Dir(cfgPath))
   if err != nil {
     log.Fatalf("Failed to create Docker build handler due to the error: %s", err.Error())
     os.Exit(1)
