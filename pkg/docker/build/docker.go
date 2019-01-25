@@ -25,6 +25,7 @@ type Options struct {
   Client *client.Client
   ContextPath string
   RootConfig *rootcfg.CarbonConfig
+  Tags []string
 }
 
 func NewOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*Options, error) {
@@ -40,6 +41,34 @@ func NewOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*Options, error) {
   }
 
   return resp, nil
+}
+
+func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) {
+  var selectTags []string
+  if len(cliTags) > 0 {
+    selectTags = cliTags
+  } else if len(self.RootConfig.Data.Artifacts) > 0 {
+    selectTags = self.RootConfig.Data.Artifacts
+  } else {
+    selectTags = append(selectTags, joinTag(self.RootConfig.Data.Name, self.RootConfig.Data.Version))
+  }
+
+  for _, i := range selectTags {
+    parts := strings.SplitN(i, ":", 2)
+    name := parts[0]
+    var tag string
+    if len(parts) == 1 {
+      tag = self.RootConfig.Data.Version
+    } else {
+      tag = parts[1]
+    }
+    fullTag := joinTag(name, (prefix + tag + suffix))
+    self.Tags = append(self.Tags, fullTag)
+  }
+}
+
+func joinTag(repo, tag string) string {
+  return strings.Join([]string{repo, tag}, ":")
 }
 
 // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
@@ -70,7 +99,7 @@ func (self *Options) Build(metadata map[string]string) error {
     NoCache:     true,
     PullParent:  true,
     Remove:      true,
-    Tags:        self.tags(),
+    Tags:        self.Tags,
   }
 
   if suppressOutput() {
@@ -101,7 +130,7 @@ func suppressOutput() bool {
 
 func (self *Options) Push() error {
   termFd, isTerm := term.GetFdInfo(os.Stderr)
-  for _, i := range self.tags() {
+  for _, i := range self.Tags {
     meta := dockermeta.NewDockerMeta(i)
     username, password, err := meta.GetCredentials()
     if err != nil {
@@ -130,23 +159,26 @@ func (self *Options) Push() error {
   return nil
 }
 
-func (self *Options) tags() []string {
-  var tags []string
-  if len(self.RootConfig.Data.Artifacts) > 0 {
-    for _, i := range self.RootConfig.Data.Artifacts {
-      parts := strings.Split(i, ":")
-      if len(parts) == 1 {
-        tags = append(tags, buildTag(parts[0], self.RootConfig.Data.Version))
-      } else {
-        tags = append(tags, i)
+func (self *Options) Remove() error {
+  for _, i := range self.Tags {
+
+    opt := types.ImageRemoveOptions{
+      // Force: true,
+      PruneChildren: true,
+    }
+
+    response, err := self.Client.ImageRemove(context.Background(), i, opt)
+    if err != nil {
+      return errors.Wrapf(err, "removing `%s` docker images", i)
+    }
+    for _, i := range response {
+      if i.Untagged != "" {
+        log.Debug("Untagged: ", i.Untagged)
+      }
+      if i.Deleted != "" {
+        log.Debug("Deleted: ", i.Deleted)
       }
     }
-  } else {
-    tags = append(tags, buildTag(self.RootConfig.Data.Name, self.RootConfig.Data.Version))
   }
-  return tags
-}
-
-func buildTag(repo, tag string) string {
-  return strings.Join([]string{repo, tag}, ":")
+  return nil
 }

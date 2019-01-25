@@ -6,10 +6,10 @@ import (
 
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
+  "github.com/starofservice/vconf"
 
   "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
   "github.com/starofservice/carbon/pkg/schema/rootcfg"
-  "github.com/starofservice/carbon/pkg/schema/versioned"
   "github.com/starofservice/carbon/pkg/util/base64"
 )
 
@@ -17,7 +17,7 @@ const (
   carbonMetaLabel = "carbon-package-metadata"
 )
 
-var schemaVersions = map[string]func() versioned.ConfigHandler{
+var schemaVersions = map[string]func() vconf.ConfigInterface{
   latest.Version: latest.NewPackageConfig,
 }
 
@@ -80,12 +80,12 @@ func Deserialize(metaMap map[string]string) (*PackageConfig, error) {
     return nil, err
   }
 
-  sh := versioned.NewSchemaHandler(current, latest.Version)
+  sh := vconf.NewSchemaHandler(latest.Version)
   for k, v := range schemaVersions {
     sh.RegVersion(k, v)
   }
 
-  cfg, err := sh.GetLatestConfig(data)
+  cfg, err := sh.GetLatestConfig(current, data)
   if err != nil {
     return nil, err
   }

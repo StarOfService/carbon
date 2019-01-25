@@ -2,8 +2,8 @@ package latest
 
 import (
   "encoding/json"
-
-  "github.com/starofservice/carbon/pkg/schema/versioned"
+  "errors"
+  "github.com/starofservice/vconf"
 )
 
 const Version string = "v1alpha1"
@@ -16,11 +16,10 @@ type KubeMetadata struct {
   Variables     map[string]string `json:"variables"`
   Patches       string            `json:"patches"`
   Manifest      string            `json:"manifest"`
-  // hooks
   // dependencies
 }
 
-func NewKubeMetadata() versioned.ConfigHandler {
+func NewKubeMetadata() vconf.ConfigInterface {
   return new(KubeMetadata)
 }
 
@@ -33,11 +32,9 @@ func (c *KubeMetadata) Parse(data []byte) error {
     return err
   }
 
-  // if useDefaults {
-  //   if err := c.SetDefaultValues(); err != nil {
-  //     return errors.Wrap(err, "applying default values")
-  //   }
-  // }
-
   return nil
+}
+
+func (c *KubeMetadata) Upgrade() (vconf.ConfigInterface, error) {
+  return nil, errors.New("not implemented yet")
 }

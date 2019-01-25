@@ -2,8 +2,8 @@ package latest
 
 import (
   yaml "gopkg.in/yaml.v2"
-
-  "github.com/starofservice/carbon/pkg/schema/versioned"
+  "errors"
+  "github.com/starofservice/vconf"
 )
 
 const Version string = "v1alpha1"
@@ -28,11 +28,10 @@ type CarbonConfig struct {
   Artifacts     []string   `yaml:"artifacts"`
   Variables     []CarbonConfigVariable `yaml:"variables"`
   Hooks         CarbonConfigHooks `yaml:"hooks"`
-  // hooks
   // dependencies
 }
 
-func NewCarbonConfig() versioned.ConfigHandler {
+func NewCarbonConfig() vconf.ConfigInterface {
   return new(CarbonConfig)
 }
 
@@ -45,11 +44,9 @@ func (c *CarbonConfig) Parse(contents []byte) error {
     return err
   }
 
-  // if useDefaults {
-  //   if err := c.SetDefaultValues(); err != nil {
-  //     return errors.Wrap(err, "applying default values")
-  //   }
-  // }
-
   return nil
+}
+
+func (c *CarbonConfig) Upgrade() (vconf.ConfigInterface, error) {
+  return nil, errors.New("not implemented yet")
 }

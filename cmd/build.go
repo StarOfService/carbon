@@ -16,8 +16,12 @@ import (
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
 )
 
-var cfgFile string
+var buildConfig string
 var buildPush bool
+var buildRemove bool
+var buildTags []string
+var buildTagPrefix string
+var buildTagSuffix string
 
 var buildCmd = &cobra.Command{
   Use:   "build",
@@ -37,13 +41,21 @@ Builds a Carbon package based on the provided carbon.yaml config.`,
 
 func init() {
   RootCmd.AddCommand(buildCmd)
-
-  buildCmd.Flags().StringVarP(&cfgFile, "config", "c", "carbon.yaml", "config file (default is carbon.yaml)")
+  buildCmd.Flags().StringVarP(&buildConfig, "config", "c", "carbon.yaml", "config file (default is carbon.yaml)")
   buildCmd.Flags().BoolVar(&buildPush, "push", false, "Push built images to the repositories (disabled by default)")
+  buildCmd.Flags().BoolVar(&buildRemove, "rm", false, "Remove build images after the push operation (disabled by default)")
+  buildCmd.Flags().StringArrayVar(&buildTags, "tag", []string{}, "Name and optionally a tag in the 'name:tag' format. If tag isn't provided, it will be replaced by the component version from carbon.yaml")
+  buildCmd.Flags().StringVar(&buildTagPrefix, "tag-prefix", "", "Prefix which should be added for all tags")
+  buildCmd.Flags().StringVar(&buildTagSuffix, "tag-suffix", "", "Suffix which should be added for all tags")
 }
 
 func runBuild() {
   log.Info("Starting Carbon build")
+
+  if buildRemove && !buildPush {
+    log.Warn("Images can be removed only when push is enabled (see --push option). Skipping it.")
+    buildRemove = false
+  }
 
   if minikube.Enabled {
     err := minikube.SetDockerEnv()
@@ -54,7 +66,7 @@ func runBuild() {
   }
 
   log.Info("Reading Carbon config")
-  cfgPath, err := filepath.Abs(cfgFile)
+  cfgPath, err := filepath.Abs(buildConfig)
   if err != nil {
     log.Fatalf("Failed to find Carbon config due to the error: %s", err.Error())
     os.Exit(1)
@@ -114,6 +126,7 @@ func runBuild() {
     log.Fatalf("Failed to create Docker build handler due to the error: %s", err.Error())
     os.Exit(1)
   }
+  dockerBuild.ExtendTags(buildTags, buildTagPrefix, buildTagSuffix)
 
   err = dockerBuild.Build(metaMap)
   if err != nil {
@@ -133,6 +146,11 @@ func runBuild() {
   if buildPush {
     log.Info("Pushing built docker images")
     dockerBuild.Push()
+  }
+
+  if buildRemove {
+    log.Info("Removing built images")
+    dockerBuild.Remove()
   }
 
   log.Info("Carbon package has been built successfully")

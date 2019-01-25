@@ -9,10 +9,10 @@ import (
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
   typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
   "github.com/pkg/errors"
+  "github.com/starofservice/vconf"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/schema/kubemeta/latest"
-  "github.com/starofservice/carbon/pkg/schema/versioned"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
   metaObjectKey = "metadata"
 )
 
-var schemaVersions = map[string]func() versioned.ConfigHandler{
+var schemaVersions = map[string]func() vconf.ConfigInterface{
   latest.Version: latest.NewKubeMetadata,
 }
 
@@ -91,12 +91,12 @@ func secretToHandler(secret *apicorev1.Secret) (*Handler, error) {
     return nil, err
   }
 
-  sh := versioned.NewSchemaHandler(current, latest.Version)
+  sh := vconf.NewSchemaHandler(latest.Version)
   for k, v := range schemaVersions {
     sh.RegVersion(k, v)
   }
 
-  cfg, err := sh.GetLatestConfig(data)
+  cfg, err := sh.GetLatestConfig(current, data)
   if err != nil {
     return nil, err
   }

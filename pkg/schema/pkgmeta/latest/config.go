@@ -2,8 +2,8 @@ package latest
 
 import (
   "encoding/json"
-
-  "github.com/starofservice/carbon/pkg/schema/versioned"
+  "errors"
+  "github.com/starofservice/vconf"
 )
 
 const Version string = "v1alpha1"
@@ -24,7 +24,7 @@ type PackageConfig struct {
   Variables     []PackageConfigVariable `json:"variables"`
 }
 
-func NewPackageConfig() versioned.ConfigHandler {
+func NewPackageConfig() vconf.ConfigInterface {
   return new(PackageConfig)
 }
 
@@ -39,4 +39,8 @@ func (c *PackageConfig) Parse(data []byte) error {
   }
 
   return nil
+}
+
+func (c *PackageConfig) Upgrade() (vconf.ConfigInterface, error) {
+  return nil, errors.New("not implemented yet")
 }
