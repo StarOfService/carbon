@@ -71,8 +71,8 @@ func runDeploy(image string) {
   vars := parseVars()
   patches, err := parsePatches()
   if err != nil {
-    log.Fatal("Failed to parse patches due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to parse patches due to the error: ", err.Error())
+    // os.Exit(1)
   }  
 
   log.Info("Getting carbon package metadata")
@@ -80,19 +80,19 @@ func runDeploy(image string) {
   labels, err := dm.GetLabels()
   if err != nil {
     log.Fatalf("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-    os.Exit(1)
+    // os.Exit(1)
   }
 
   meta, err := pkgmeta.Deserialize(labels)
   if err != nil {
     log.Fatalf("Failed to deserialize Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-    os.Exit(1)
+    // os.Exit(1)
   }
 
   kdeploy, err := kubernetes.NewKubeDeployment(meta, dm.Name(), dm.Tag())
   if err != nil {
-    log.Fatalf("Failed to create new instance of KubeDeploy due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to create new instance of KubeDeploy due to the error: ", err.Error())
+    // os.Exit(1)
   }
 
   kdeploy.UpdateVars(vars)
@@ -100,27 +100,27 @@ func runDeploy(image string) {
   log.Info("Building Kubernetes configuration")
   err = kdeploy.Build()
   if err != nil {
-    log.Fatal("Failed to build Kubernetes configuration due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to build Kubernetes configuration due to the error: ", err.Error())
+    // os.Exit(1)
   }
 
   log.Info("Applying patches")
   err = kdeploy.ProcessPatches(patches)
   if err != nil {
-    log.Fatalf("Failed to apply user patches for kubernetes resources due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to apply user patches for kubernetes resources due to the error: ", err.Error())
+    // os.Exit(1)
   }
 
   err = kdeploy.SetAppLabel()
   if err != nil {
-    log.Fatalf("Failed to apply Carbon labels for kubernetes resources due to the error: %s", err.Error())
-    os.Exit(1) 
+    log.Fatal("Failed to apply Carbon labels for kubernetes resources due to the error: ", err.Error())
+    // os.Exit(1)
   }
 
   log.Info("Applying kubernetes configuration")
   err = kdeploy.Apply(deployDefaultPWL, deployNamespace)
   if err != nil {
-    log.Errorf("Failed to apply Kubernetes configuration due to the error: %s", err.Error())
+    log.Error("Failed to apply Kubernetes configuration due to the error: ", err.Error())
     revert(kdeploy)
     os.Exit(1)
   }
@@ -129,7 +129,7 @@ func runDeploy(image string) {
   kmeta := kubemeta.New(kdeploy, patches, getDeployMetadataNamespace())
   err = kmeta.Apply()
   if err != nil {
-    log.Errorf("Failed to update Carbon metadata due to the error: %s", err.Error())
+    log.Error("Failed to update Carbon metadata due to the error: ", err.Error())
     revert(kdeploy)
     os.Exit(1)
   }
@@ -148,13 +148,13 @@ func parseVars() map[string]string {
   }
   err := vars.ParseFiles(deployVarFiles)
   if err != nil {
-    log.Fatalf("Failed to parse variable files due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to parse variable files due to the error: ", err.Error())
+    // os.Exit(1)
   }
   vars.ParseFlags(deployVarFlags)
   if err != nil {
-    log.Fatalf("Failed to parse variable flags due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatalf("Failed to parse variable flags due to the error: ", err.Error())
+    // os.Exit(1)
   }
 
   return vars.Data
@@ -164,14 +164,14 @@ func revert(kdeploy *kubernetes.KubeDeployment) {
   log.Error("Trying to revert changes")
   kmeta, err := kubemeta.Get(kdeploy.Variables.Pkg.Name, getDeployMetadataNamespace())
   if err != nil {
-    log.Fatalf("Failed to revert Kubernetes configuration due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to revert Kubernetes configuration due to the error: ", err.Error())
+    // os.Exit(1)
   }
   kdeploy.BuiltManifest = []byte(kmeta.Data.Manifest)
   err = kdeploy.Apply(deployDefaultPWL, deployNamespace)
   if err != nil {
-    log.Fatalf("Failed to revert Kubernetes configuration due to the error: %s", err.Error())
-    os.Exit(1)
+    log.Fatal("Failed to revert Kubernetes configuration due to the error: ", err.Error())
+    // os.Exit(1)
   }
   log.Error("Revert has ran successfully")
   os.Exit(1)

@@ -26,7 +26,7 @@ func ToJSON(data []byte) ([]byte, error) {
   }
 
   if err := checkYAML(data); err != nil {
-    log.Fatalf("Document:\n%s", data)
+    log.Errorf("Document:\n%s", data)
     return nil, errors.Wrap(err, "verifying YAML document")
   }
 
@@ -39,10 +39,12 @@ func ToJSON(data []byte) ([]byte, error) {
       continue
     }
     jd, err := ghodssyaml.YAMLToJSON(d)
+
     if err != nil {
-      log.Fatalf("Document:\n%s", d)
+      log.Errorf("Document:\n%s", d)
       return []byte{}, errors.Wrap(err, "converting YAML document to JSON format")
     }
+    
     jsonDocs = append(jsonDocs, jd)
   }
 
@@ -50,11 +52,11 @@ func ToJSON(data []byte) ([]byte, error) {
 
   // Checking response format because plain text may be considered as a valid YAML format
   if err := checkJSON(resp); err != nil {
-    log.Fatalf("Document:\n%s", data)
+    log.Errorf("Document:\n%s", data)
     return []byte{}, errors.Wrap(err, "verifying JSON document after the YAML->JSON convertion")
   }
 
-  log.Trace("Output data: %s", string(resp))
+  log.Trace("Output data: ", string(resp))
   return resp, nil
 }
 
@@ -75,7 +77,7 @@ func checkJSON(data []byte) error {
         return nil
     }
     if err != nil {
-      log.Debugf("Failed to unmarshal JSON data due to the error: ", err.Error())
+      log.Debug("Failed to unmarshal JSON data due to the error: ", err.Error())
       return err
     }
   }
@@ -91,7 +93,7 @@ func checkYAML(data []byte) error {
         return nil
     }
     if err != nil {
-      log.Debugf("Failed to unmarshal YAML data due to the error: ", err.Error())
+      log.Debug("Failed to unmarshal YAML data due to the error: ", err.Error())
       return err
     }
   }

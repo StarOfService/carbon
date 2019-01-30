@@ -2,6 +2,7 @@ package rootcfg
 
 import (
   "gopkg.in/yaml.v2"
+  "os"
 
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
@@ -89,7 +90,7 @@ func (self *CarbonConfig) RunHook(hookType string) error {
   }
 
   for _, i := range cmds {
-    err := command.Run(i)
+    err := command.Run(i, os.Stdout, os.Stderr)
     if err != nil {
       return err
     }

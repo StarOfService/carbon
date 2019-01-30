@@ -11,11 +11,12 @@ import (
 
 const K8sContext = "minikube"
 var Enabled = false
+var envVars []string
 
 func CheckStatus() error {
   out, err := exec.Command("minikube", "status").Output()
   if err != nil {
-    log.Fatal(string(out))
+    log.Error(string(out))
     return err
   }
 
@@ -46,9 +47,20 @@ func SetDockerEnv() error {
       envKey := envVarSlice[0]
       envValue := strings.Trim(envVarSlice[1], "\"'")
 
+      envVars = append(envVars, envKey)
       os.Setenv(envKey, envValue)
     }
   }
 
   return nil
+}
+
+
+func UnsetDockerEnv() {
+  for _, i := range envVars {
+    err := os.Unsetenv(i)
+    if err != nil {
+      log.Errorf("Unable to unset environment variable '%s'", i)
+    }
+  }
 }

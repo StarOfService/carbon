@@ -51,7 +51,7 @@ func (self *KubeDeployment) Apply(defPWL bool, ns string) error {
   o.Selector = selector
 
   if !defPWL {
-    allRes, err := getAllResources()
+    allRes, err := GetAllResources()
     if err == nil {
       for _, i := range allRes {
         o.PruneWhitelist = append(o.PruneWhitelist, i)
@@ -83,8 +83,7 @@ func (self *KubeDeployment) Apply(defPWL bool, ns string) error {
   return nil
 }
 
-
-func getAllResources() ([]string, error) {
+func GetAllResources() ([]string, error) {
 
   kubeConfig, err := GetKubeConfig()
   if err != nil {

@@ -14,15 +14,15 @@ import (
 )
 
 type DepVarsPkg struct {
-  Name string
-  Version string
   DockerName string
   DockerTag string
+  Name string
+  Version string
 }
 
 type DepVars struct {
-  Var map[string]string
   Pkg DepVarsPkg
+  Var map[string]string
 }
 
 type KubeDeployment struct {
@@ -111,7 +111,7 @@ patch:
   
   patch, err := tojson.ToJSON([]byte(ops))
   if err != nil {
-    log.Fatal("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
+    log.Error("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
     return errors.Wrap(err, "converting Kubernetes patch with Carbon labels to JSON")
   }
   if err := self.ProcessPatches(patch); err != nil {

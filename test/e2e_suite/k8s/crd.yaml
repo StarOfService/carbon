@@ -1,0 +1,57 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: amsproducers.starofservice.com
+spec:
+  group: starofservice.com
+  version: v1alpha1
+  scope: Cluster
+  names:
+    plural: amsproducers
+    singular: amsproducer
+    kind: AmsProducer
+    shortNames:
+    - amsp
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          required:
+          - iamClientRole
+          properties:
+            iamClientRole:
+              type: string
+              pattern: '^arn:aws:iam::[0-9]{12}:(role|user)/[a-zA-Z0-9+=,.@_-]+$'
+---
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  name: amsconsumers.starofservice.com
+spec:
+  group: starofservice.com
+  version: v1alpha1
+  scope: Cluster
+  names:
+    plural: amsconsumers
+    singular: amsconsumer
+    kind: AmsConsumer
+    shortNames:
+    - amsc
+  validation:
+    openAPIV3Schema:
+      properties:
+        spec:
+          required:
+          - iamClientRole
+          - global
+          - srcFilters
+          properties:
+            iamClientRole:
+              type: string
+              pattern: '^arn:aws:iam::[0-9]{12}:(role|user)/[a-zA-Z0-9+=,.@_-]+$'
+            global:
+              type: boolean
+            srcFilters:
+              type: array
+              items:
+                type: string

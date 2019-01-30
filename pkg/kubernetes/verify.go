@@ -51,6 +51,7 @@ func (self *KubeDeployment) VerifyTpl(path string) error {
   if err != nil {
     return errors.Wrap(err, "converting Kuberentese manifests to JSON")
   }
+
   
   return nil
 }

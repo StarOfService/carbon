@@ -58,8 +58,9 @@ func TestKubePatch(t *testing.T) {
   }
 
   for _, s := range patchSuites {
-    t.Log(s.description)
-    kd := kubernetes.KubeDeployment{
+    t.Log("suite:", s.description)
+
+    kd := &kubernetes.KubeDeployment{
       BuiltManifest: []byte(s.original),
     }
     err := kd.ProcessPatches([]byte(s.patch))

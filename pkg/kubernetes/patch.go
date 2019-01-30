@@ -40,7 +40,7 @@ func deserialPatchers(data []byte) ([]Patcher, error) {
         break
     }
     if err != nil {
-      log.Fatalf("Document:\n%s", string(data))
+      log.Errorf("Document:\n%s", string(data))
       return nil, errors.Wrap(err, "deserializing patch data")
     }
     resp = append(resp, ph)
@@ -65,7 +65,7 @@ func (self *KubeDeployment) processPatchers(phs []Patcher) error {
       }
       original, err := json.Marshal(obj)
       if err != nil {
-        log.Fatal("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
+        log.Error("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
         return errors.Wrap(err, "serialize Kubernetes manifest")
       }
       modified, err := ph.Apply(original)
@@ -88,8 +88,8 @@ type Patcher struct {
 
 func (self *Patcher) Apply(original []byte) ([]byte, error) {
   log.Trace("Processing patch for object")
-  log.Tracef("Patch: %s", string(self.Patch))
-  log.Tracef("Original object: %s", string(original))
+  log.Trace("Patch: ", string(self.Patch))
+  log.Trace("Original object: ", string(original))
   modified := original
 
   match, err := self.MatchObj(original)
@@ -105,35 +105,35 @@ func (self *Patcher) Apply(original []byte) ([]byte, error) {
   case "merge":
     modified, err = jsonpatch.MergePatch(original, self.Patch)
     if err != nil {
-      log.Fatalf("Patch data: %s", string(self.Patch))
-      log.Fatalf("Kubernetes manifest data: %s", original)
+      log.Error("Patch data: ", string(self.Patch))
+      log.Error("Kubernetes manifest data: ", original)
       return original, errors.Wrap(err, "applying merge patch for Kuberentese manifest")
     }
   case "json":
     jp, err := jsonpatch.DecodePatch(self.Patch)
     if err != nil {
-      log.Fatalf("Patch data: %s", string(self.Patch))
+      log.Error("Patch data: ", string(self.Patch))
       return original, errors.Wrap(err, "decoding json patch")
     }
     modified, err = jp.Apply(original)
     if err != nil {
-      log.Fatalf("Patch data: %s", string(self.Patch))
-      log.Fatalf("Kubernetes manifest data: %s", original)
+      log.Error("Patch data: ", string(self.Patch))
+      log.Error("Kubernetes manifest data: ", original)
       return original, errors.Wrap(err, "applying json patch for Kubernetes manifest")
     }
   default:
-    log.Fatalf("Patch data: %s", string(self.Patch))
-    return original, errors.Errorf("Unknown patch type: %s", self.Type)
+    log.Error("Patch data: ", string(self.Patch))
+    return original, errors.Error("Unknown patch type: ", self.Type)
   }
-  log.Trace("Modified object: %s", string(modified))
+  log.Trace("Modified object: ", string(modified))
   return modified, nil
 }
 
 func (self *Patcher) MatchObj(data []byte) (bool, error) {
   gjp, err := gabs.ParseJSON(data)
   if err != nil {
-    log.Fatalf("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
-    log.Fatalf("Kubernetes manifest data: %s", data)
+    log.Error("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
+    log.Error("Kubernetes manifest data: ", data)
     return false, errors.Wrap(err, "parsing Kubernetes manifest JSON data")
   }
 
