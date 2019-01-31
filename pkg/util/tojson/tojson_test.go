@@ -1,4 +1,4 @@
-package test
+package tojson_test
 
 import (
   "testing"

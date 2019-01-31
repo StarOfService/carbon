@@ -1,4 +1,4 @@
-package test
+package minikube_test
 
 import (
   "os"
@@ -6,6 +6,7 @@ import (
   log "github.com/sirupsen/logrus"
 
   "github.com/starofservice/carbon/pkg/minikube"
+  "github.com/starofservice/carbon/pkg/test"
 )
 
 var dockerEnv = []string{
@@ -15,8 +16,22 @@ var dockerEnv = []string{
   "DOCKER_API_VERSION",
 }
 
+func TestMain(m *testing.M) {
+    log.Info("Starting minikube")
+    err := test.MinikubeStart()
+    if err != nil {
+      log.Error("Failed to start minikube due ot the error: ", err.Error())
+    }
+
+    defer test.DeferMinikubeDelete()
+
+    code := m.Run()
+    
+    os.Exit(code)
+}
+
 func TestMinikubeRunning(t *testing.T) {
-  err := MinikubeStart()
+  err := test.MinikubeStart()
   if err != nil {
     t.Errorf("Failed to start minikube due ot the error: %s", err.Error())
     return
@@ -44,12 +59,12 @@ func TestMinikubeRunning(t *testing.T) {
 }
 
 func TestMinikubeStopped(t *testing.T) {
-  err := MinikubeStop()
+  err := test.MinikubeStop()
   if err != nil {
     t.Errorf("Failed to stop minikube due ot the error: %s", err.Error())
     return
   }
-  // defer MinikubeStart()
+  // defer test.MinikubeStart()
 
   log.SetLevel(log.FatalLevel)
   defer log.SetLevel(log.InfoLevel)
@@ -61,12 +76,12 @@ func TestMinikubeStopped(t *testing.T) {
 }
 
 func TestMinikubeDeleted(t *testing.T) {
-  err := MinikubeDelete()
+  err := test.MinikubeDelete()
   if err != nil {
     t.Errorf("Failed to delete minikube due ot the error: %s", err.Error())
     return
   }
-  defer MinikubeStart()
+  // defer test.MinikubeStart()
 
   log.SetLevel(log.FatalLevel)
   defer log.SetLevel(log.InfoLevel)

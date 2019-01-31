@@ -123,7 +123,7 @@ func (self *Patcher) Apply(original []byte) ([]byte, error) {
     }
   default:
     log.Error("Patch data: ", string(self.Patch))
-    return original, errors.Error("Unknown patch type: ", self.Type)
+    return original, errors.Errorf("Unknown patch type: %s", self.Type)
   }
   log.Trace("Modified object: ", string(modified))
   return modified, nil

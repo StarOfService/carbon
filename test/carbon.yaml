@@ -1,22 +1,20 @@
 apiVersion: v1alpha1
 dockerfile: Dockerfile
 kubeManifests: k8s/*.yaml
-name: carbon-e2e-test
+name: carbon-test
 version: 0.0.1
 hooks:
   pre-build:
-    - docker version
+    - minikube version
   post-build:
     - hooks/build.sh
 variables:
   - name: FullName
-    default: carbon-test-local
+    default: carbon-test
   - name: Environment
     default: local
   - name: KubeNamespace
     default: default
-  - name: AWSKubeAssumeRolePolicy
-    default: '{ Effect: Allow, Principal: { AWS: "arn:aws:iam::892280667576:root" }, Action: "sts:AssumeRole" }'
   - name: Cluster
-    default: ireland
+    default: core
     description: K8s cluster name

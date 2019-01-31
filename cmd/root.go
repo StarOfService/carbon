@@ -46,8 +46,8 @@ More details can be found here: https://github.com/StarOfService/carbon`,
     case "fatal":
       log.SetLevel(log.FatalLevel)
     default:
-      log.Fatal("Unsupported log level: %s", logLevel)
-      os.Exit(1)
+      log.Fatal("Unsupported log level: ", logLevel)
+      // os.Exit(1)
     }
 
     if rootMinikube {

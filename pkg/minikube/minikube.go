@@ -55,7 +55,6 @@ func SetDockerEnv() error {
   return nil
 }
 
-
 func UnsetDockerEnv() {
   for _, i := range envVars {
     err := os.Unsetenv(i)

@@ -33,10 +33,11 @@ func GetCurrentVersion(data []byte) (string, error) {
 }
 
 type CarbonConfig struct {
- Data latest.CarbonConfig
+  Cwd  string
+  Data latest.CarbonConfig
 }
 
-func ParseConfig(data []byte) (*CarbonConfig, error) {
+func ParseConfig(dir string, data []byte) (*CarbonConfig, error) {
   log.Debug("Processing Carbon config")
 
   current, err := GetCurrentVersion(data)
@@ -56,6 +57,7 @@ func ParseConfig(data []byte) (*CarbonConfig, error) {
 
   parsedCfg := cfg.(*latest.CarbonConfig)
   pc := &CarbonConfig{
+    Cwd: dir,
     Data: *parsedCfg,
   }
   return pc, nil
@@ -90,7 +92,7 @@ func (self *CarbonConfig) RunHook(hookType string) error {
   }
 
   for _, i := range cmds {
-    err := command.Run(i, os.Stdout, os.Stderr)
+    err := command.Run(i, self.Cwd, os.Stdout, os.Stderr)
     if err != nil {
       return err
     }

@@ -40,14 +40,14 @@ func runInspect(image string) {
   dm := dockermeta.NewDockerMeta(image)
   labels, err := dm.GetLabels()
   if err != nil {
-    log.Fatal("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-    os.Exit(1)
+    log.Fatalf("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
+    // os.Exit(1)
   }
 
   meta, err := pkgmeta.Deserialize(labels)
   if err != nil {
     log.Fatalf("Failed to deserialize Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-    os.Exit(1)
+    // os.Exit(1)
   }
 
   table := tablewriter.NewWriter(os.Stdout)

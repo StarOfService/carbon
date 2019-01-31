@@ -18,6 +18,8 @@ const (
   kubeImageOS = "linux"
 )
 
+var SkipTLSVerify = false
+
 type DockerMeta struct {
   image string
   ref types.ImageReference
@@ -55,6 +57,7 @@ func (self *DockerMeta) GetLabels() (map[string]string, error) {
 
   sys := &types.SystemContext{
     OSChoice: kubeImageOS,
+    DockerInsecureSkipTLSVerify: types.NewOptionalBool(SkipTLSVerify),
   }
 
   log.Debug("Trying to receive the lables without authentication for a public repo")

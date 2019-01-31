@@ -6,9 +6,14 @@ import (
   "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
 )
 
+const defVersion = "0.0.0"
 var VERSION string
 
 func PrintVersion() {
-  fmt.Println("Carbon utility version:", VERSION)
+  v := defVersion
+  if VERSION != "" {
+    v = VERSION
+  }
+  fmt.Println("Carbon utility version:", v)
   fmt.Println("Latest apiVersion for carbon.yaml:", latest.Version)
 }

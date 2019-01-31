@@ -42,6 +42,20 @@ type Handler struct {
  Namespace string
 }
 
+func IsDeployed(name, ns string) (bool, error) {
+  slist, err := getAllSecrets(ns)
+  if err != nil {
+    return false, err
+  }
+
+  for _, i := range slist.Items {
+    if i.ObjectMeta.Name == name {
+      return true, nil
+    }
+  }
+  return false, nil
+}
+
 func Get(name, ns string) (*Handler, error) {
   // log.Debug("Processing Kubernete metadata")
 
@@ -60,13 +74,17 @@ func Get(name, ns string) (*Handler, error) {
 
 
 func GetAll(ns string) ([]*Handler, error) {
-  secretHandler, err := getSecretHandler(ns)
-  if err != nil {
-    return nil, err
-  }
+  // secretHandler, err := getSecretHandler(ns)
+  // if err != nil {
+  //   return nil, err
+  // }
 
-  label := fmt.Sprintf("%s=%s", metaObjectLabelKey, metaObjectLabelValue)
-  slist, err := secretHandler.List(metav1.ListOptions{LabelSelector: label})
+  // label := fmt.Sprintf("%s=%s", metaObjectLabelKey, metaObjectLabelValue)
+  // slist, err := secretHandler.List(metav1.ListOptions{LabelSelector: label})
+  // if err != nil {
+  //   return nil, err
+  // }
+  slist, err := getAllSecrets(ns)
   if err != nil {
     return nil, err
   }
@@ -165,6 +183,21 @@ func (self *Handler) Apply() error {
   }
 
   return nil
+}
+
+func getAllSecrets(ns string) (*apicorev1.SecretList, error) {
+  secretHandler, err := getSecretHandler(ns)
+  if err != nil {
+    return nil, err
+  }
+
+  label := fmt.Sprintf("%s=%s", metaObjectLabelKey, metaObjectLabelValue)
+  slist, err := secretHandler.List(metav1.ListOptions{LabelSelector: label})
+  if err != nil {
+    return nil, err
+  }
+
+  return slist, nil
 }
 
 func getSecretHandler(namespace string) (typedcorev1.SecretInterface, error) {

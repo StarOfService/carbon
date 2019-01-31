@@ -1,10 +1,27 @@
-package test
+package kubernetes_test
 
 import (
+  "os"
   "testing"
+  log "github.com/sirupsen/logrus"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
+  "github.com/starofservice/carbon/pkg/test"
 )
+
+func TestMain(m *testing.M) {
+    log.Info("Starting minikube")
+    err := test.MinikubeStart()
+    if err != nil {
+      log.Error("Failed to start minikube due ot the error: ", err.Error())
+    }
+    defer test.DeferMinikubeDelete()
+
+    code := m.Run()
+    
+    os.Exit(code)
+}
+
 
 func TestPurgeList(t *testing.T) {
   suite := map[string]bool{

@@ -4,15 +4,22 @@ import (
   "fmt"
   "io/ioutil"
   "path/filepath"
-
   log "github.com/sirupsen/logrus"
+
+  "github.com/starofservice/carbon/pkg/schema/rootcfg"
 )
 
-func ReadTemplates(path string) ([]byte, error) {
+// func ReadTemplates(path string) ([]byte, error) {
+func ReadTemplates(cfg *rootcfg.CarbonConfig) ([]byte, error) {
   log.Debug("Reading kube manifest templates")
-  files, err := filepath.Glob(path)
+  fullPath := filepath.Join(cfg.Cwd, cfg.Data.KubeManifests)
+  files, err := filepath.Glob(fullPath)
   if err != nil {
     return nil, err
+  }
+  // TODO: test this:
+  if len(files) == 0 {
+    return nil, fmt.Errorf("Unable to find Kubernetes manifests at ", fullPath)
   }
 
   resp := []byte{}

@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM alpine:latest
 
 COPY carbon.yaml /
 

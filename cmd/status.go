@@ -10,8 +10,8 @@ import (
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
 )
 
-var statusNamespace string
-var statusFull bool
+var StatusNamespace string
+var StatusFull bool
 // var statusMetadataNamespace string
 
 var statusCmd = &cobra.Command{
@@ -38,15 +38,16 @@ You can provide name for a specific package(s). In this case a detailed informat
 func init() {
   RootCmd.AddCommand(statusCmd)
 
-  statusCmd.Flags().StringVarP(&statusNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
-  statusCmd.Flags().BoolVarP(&statusFull, "full", "f", false, "Print a full information for a given package(s) (including patches and applied manifests). Disabled by default.")
+  statusCmd.Flags().StringVarP(&StatusNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
+  statusCmd.Flags().BoolVarP(&StatusFull, "full", "f", false, "Print a full information for a given package(s) (including patches and applied manifests). Disabled by default.")
   // deployCmd.Flags().StringVar(&statusMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
 }
 
 func runStatusAll() {
   meta, err := kubemeta.GetAll(getStatusMetadataNamespace())
   if err != nil {
-    panic("panic")
+    // panic("panic")
+    log.Fatal("Failed to get status for the deployed carbon packages due to the error: ", err.Error())
   }
 
   if len(meta) == 0 {
@@ -71,7 +72,8 @@ func runStatusAll() {
 func runStatusSingle(pkg string) {
   meta, err := kubemeta.Get(pkg, getStatusMetadataNamespace())
   if err != nil {
-    panic("panic")
+    // panic("panic")
+    log.Fatalf("Failed to get status for the carbon package '%s' due to the error: %s", pkg, err.Error())
   }
 
   table := tablewriter.NewWriter(os.Stdout)
@@ -92,7 +94,7 @@ func runStatusSingle(pkg string) {
   fmt.Println("Source:", meta.Data.Source)
   fmt.Println("Variables:")
   table.Render()
-  if statusFull {
+  if StatusFull {
     fmt.Println("Patches:", meta.Data.Patches)
     fmt.Println("Manifest:", meta.Data.Manifest)
   }
@@ -102,8 +104,8 @@ func getStatusMetadataNamespace() string {
   // if statusMetadataNamespace != "" {
   //   return statusMetadataNamespace
   // }
-  if statusNamespace != "" {
-    return statusNamespace
+  if StatusNamespace != "" {
+    return StatusNamespace
   }
   return "default"
 }

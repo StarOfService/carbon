@@ -19,13 +19,13 @@ import (
   "github.com/starofservice/carbon/pkg/util/tojson"
 )
 
-var deployVarFlags []string
-var deployVarFiles []string
-var deployPatches []string
-var deployPatchFiles []string
-var deployDefaultPWL bool
-var deployNamespace string
-var deployMetadataNamespace string
+var DeployVarFlags []string
+var DeployVarFiles []string
+var DeployPatches []string
+var DeployPatchFiles []string
+var DeployDefaultPWL bool
+var DeployNamespace string
+var DeployMetadataNamespace string
 
 var deployCmd = &cobra.Command{
   Use:   "deploy image",
@@ -48,13 +48,13 @@ It may be either local or remote docker image.`,
 func init() {
   RootCmd.AddCommand(deployCmd)
 
-  deployCmd.Flags().StringArrayVar(&deployVarFlags, "var", []string{}, "Define a value for a package variable")
-  deployCmd.Flags().StringArrayVar(&deployVarFiles, "var-file", []string{}, "Define file with values for a package variables")
-  deployCmd.Flags().StringArrayVar(&deployPatches, "patch", []string{}, "Apply directly typed patch for the manifest")
-  deployCmd.Flags().StringArrayVar(&deployPatchFiles, "patch-file", []string{}, "Apply patch from a file for the Kubernetes manifest")
-  deployCmd.Flags().StringVarP(&deployNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
-  deployCmd.Flags().StringVar(&deployMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
-  deployCmd.Flags().BoolVar(&deployDefaultPWL, "default-prune-white-list", false, "Use the default prune white-list for the kubect apply operation. Enabling this option speeds-up deployment, but not all resource versions are pruned")
+  deployCmd.Flags().StringArrayVar(&DeployVarFlags, "var", []string{}, "Define a value for a package variable")
+  deployCmd.Flags().StringArrayVar(&DeployVarFiles, "var-file", []string{}, "Define file with values for a package variables")
+  deployCmd.Flags().StringArrayVar(&DeployPatches, "patch", []string{}, "Apply directly typed patch for the manifest")
+  deployCmd.Flags().StringArrayVar(&DeployPatchFiles, "patch-file", []string{}, "Apply patch from a file for the Kubernetes manifest")
+  deployCmd.Flags().StringVarP(&DeployNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
+  deployCmd.Flags().StringVar(&DeployMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
+  deployCmd.Flags().BoolVar(&DeployDefaultPWL, "default-prune-white-list", false, "Use the default prune white-list for the kubect apply operation. Enabling this option speeds-up deployment, but not all resource versions are pruned")
 }
 
 func runDeploy(image string) {
@@ -107,6 +107,7 @@ func runDeploy(image string) {
   log.Info("Applying patches")
   err = kdeploy.ProcessPatches(patches)
   if err != nil {
+    // TODO: Check amount of spaces between the custom text and the error message.
     log.Fatal("Failed to apply user patches for kubernetes resources due to the error: ", err.Error())
     // os.Exit(1)
   }
@@ -118,7 +119,7 @@ func runDeploy(image string) {
   }
 
   log.Info("Applying kubernetes configuration")
-  err = kdeploy.Apply(deployDefaultPWL, deployNamespace)
+  err = kdeploy.Apply(DeployDefaultPWL, DeployNamespace)
   if err != nil {
     log.Error("Failed to apply Kubernetes configuration due to the error: ", err.Error())
     revert(kdeploy)
@@ -144,16 +145,16 @@ func parseVars() map[string]string {
 
   vars := variables.NewVars()
   if _, err := os.Stat(homeVarsPath); err == nil {
-   deployVarFiles = append([]string{homeVarsPath}, deployVarFiles...)
+   DeployVarFiles = append([]string{homeVarsPath}, DeployVarFiles...)
   }
-  err := vars.ParseFiles(deployVarFiles)
+  err := vars.ParseFiles(DeployVarFiles)
   if err != nil {
     log.Fatal("Failed to parse variable files due to the error: ", err.Error())
     // os.Exit(1)
   }
-  vars.ParseFlags(deployVarFlags)
+  vars.ParseFlags(DeployVarFlags)
   if err != nil {
-    log.Fatalf("Failed to parse variable flags due to the error: ", err.Error())
+    log.Fatal("Failed to parse variable flags due to the error: ", err.Error())
     // os.Exit(1)
   }
 
@@ -162,13 +163,22 @@ func parseVars() map[string]string {
 
 func revert(kdeploy *kubernetes.KubeDeployment) {
   log.Error("Trying to revert changes")
+  deployed, err := kubemeta.IsDeployed(kdeploy.Variables.Pkg.Name, getDeployMetadataNamespace())
+  if err != nil {
+    log.Fatal("Failed to check if the package is already deployed due to the error: ", err.Error())
+    // os.Exit(1)
+  }
+  if !deployed {
+    log.Fatalf("Looks like the package '%s' has never been deployed yet. Nothing to do.", kdeploy.Variables.Pkg.Name)
+  }
+
   kmeta, err := kubemeta.Get(kdeploy.Variables.Pkg.Name, getDeployMetadataNamespace())
   if err != nil {
     log.Fatal("Failed to revert Kubernetes configuration due to the error: ", err.Error())
     // os.Exit(1)
   }
   kdeploy.BuiltManifest = []byte(kmeta.Data.Manifest)
-  err = kdeploy.Apply(deployDefaultPWL, deployNamespace)
+  err = kdeploy.Apply(DeployDefaultPWL, DeployNamespace)
   if err != nil {
     log.Fatal("Failed to revert Kubernetes configuration due to the error: ", err.Error())
     // os.Exit(1)
@@ -181,7 +191,7 @@ func parsePatches() ([]byte, error) {
   log.Debug("Parsing patches")
 
   var rawPatches [][]byte
-  for _, i := range deployPatchFiles {
+  for _, i := range DeployPatchFiles {
     d, err := ioutil.ReadFile(i)
     if err != nil {
       return nil, errors.Wrapf(err, "reading a patch file '%s'", i)
@@ -189,7 +199,7 @@ func parsePatches() ([]byte, error) {
     rawPatches = append(rawPatches, d)
   }
 
-  for _, i := range deployPatches {
+  for _, i := range DeployPatches {
     rawPatches = append(rawPatches, []byte(i))
   }
 
@@ -206,11 +216,11 @@ func parsePatches() ([]byte, error) {
 }
 
 func getDeployMetadataNamespace() string {
-  if deployMetadataNamespace != "" {
-    return deployMetadataNamespace
+  if DeployMetadataNamespace != "" {
+    return DeployMetadataNamespace
   }
-  if deployNamespace != "" {
-    return deployNamespace
+  if DeployNamespace != "" {
+    return DeployNamespace
   }
   return "default"
 }

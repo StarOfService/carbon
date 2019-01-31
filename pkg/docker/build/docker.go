@@ -1,9 +1,11 @@
 package build
 
 import (
+  "bytes"
   "context"
   "encoding/base64"
   "encoding/json"
+  "io"
   "os"
   "strings"
 
@@ -54,21 +56,19 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
   }
 
   for _, i := range selectTags {
-    parts := strings.SplitN(i, ":", 2)
-    name := parts[0]
+    im := dockermeta.NewDockerMeta(i)
+    name := im.Name()
+    
     var tag string
-    if len(parts) == 1 {
+    if i == name {
       tag = self.RootConfig.Data.Version
     } else {
-      tag = parts[1]
+      tag = im.Tag()
     }
+    
     fullTag := joinTag(name, (prefix + tag + suffix))
     self.Tags = append(self.Tags, fullTag)
   }
-}
-
-func joinTag(repo, tag string) string {
-  return strings.Join([]string{repo, tag}, ":")
 }
 
 // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
@@ -102,34 +102,23 @@ func (self *Options) Build(metadata map[string]string) error {
     Tags:        self.Tags,
   }
 
-  if suppressOutput() {
-    opt.SuppressOutput = true  
-  }
+  // if suppressOutput() {
+  //   opt.SuppressOutput = true  
+  // }
 
   response, err := self.Client.ImageBuild(context.Background(), ctx, opt)
   if err != nil {
     return errors.Wrap(err, "building Docker image")
   }
-
   defer response.Body.Close()
 
-  termFd, isTerm := term.GetFdInfo(os.Stderr)
-  jsonmessage.DisplayJSONMessagesStream(response.Body, os.Stderr, termFd, isTerm, nil)
+  displayJSONMsg(response.Body)
 
   return nil
 }
 
-func suppressOutput() bool {
-  logLevel := log.GetLevel().String()
-  switch logLevel {
-  case "warning", "error", "fatal", "panic":
-    return true
-  }
-  return false
-}
-
 func (self *Options) Push() error {
-  termFd, isTerm := term.GetFdInfo(os.Stderr)
+  
   for _, i := range self.Tags {
     meta := dockermeta.NewDockerMeta(i)
     username, password, err := meta.GetCredentials()
@@ -154,7 +143,7 @@ func (self *Options) Push() error {
     }
     defer response.Close()
 
-    jsonmessage.DisplayJSONMessagesStream(response, os.Stderr, termFd, isTerm, nil)
+    displayJSONMsg(response)
   }
   return nil
 }
@@ -181,4 +170,29 @@ func (self *Options) Remove() error {
     }
   }
   return nil
+}
+
+func joinTag(repo, tag string) string {
+  return strings.Join([]string{repo, tag}, ":")
+}
+
+func suppressOutput() bool {
+  logLevel := log.GetLevel().String()
+  switch logLevel {
+  case "warning", "error", "fatal", "panic":
+    return true
+  }
+  return false
+}
+
+func displayJSONMsg(in io.Reader) {
+  var out io.Writer
+  if suppressOutput() {
+    out = &bytes.Buffer{}
+  } else {
+    out = os.Stdout
+  }
+
+  termFd, isTerm := term.GetFdInfo(out)
+  jsonmessage.DisplayJSONMessagesStream(in, out, termFd, isTerm, nil)
 }
