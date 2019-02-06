@@ -3,6 +3,8 @@ package kubernetes_test
 import (
   "testing"
 
+  "github.com/stretchr/testify/assert"
+
   "github.com/starofservice/carbon/pkg/kubernetes"
 )
 
@@ -11,7 +13,7 @@ func TestKubePatch(t *testing.T) {
     description string
     original    string
     patch       string
-    assert      string
+    expected    string
   }{
     {
       "(RFC7386) Merge type: add new field for all original objects",
@@ -60,7 +62,7 @@ func TestKubePatch(t *testing.T) {
   for _, s := range patchSuites {
     t.Log("suite:", s.description)
 
-    kd := &kubernetes.KubeDeployment{
+    kd := &kubernetes.KubeInstall{
       BuiltManifest: []byte(s.original),
     }
     err := kd.ProcessPatches([]byte(s.patch))
@@ -68,8 +70,10 @@ func TestKubePatch(t *testing.T) {
       t.Errorf(err.Error())
     }
 
-    if s.assert != string(kd.BuiltManifest) {
-      t.Errorf("Test suite object %v doesn't match to the generated data %v", s.assert, string(kd.BuiltManifest))
-    }
+    assert.Equal(t, s.expected, string(kd.BuiltManifest), "they should be equal")
+
+    // if s.assert != string(kd.BuiltManifest) {
+    //   t.Errorf("Test suite object %v doesn't match to the generated data %v", s.assert, string(kd.BuiltManifest))
+    // }
   }
 }

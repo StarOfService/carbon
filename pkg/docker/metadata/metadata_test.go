@@ -3,6 +3,7 @@ package metadata_test
 import (
   "os"
   "testing"
+  
   log "github.com/sirupsen/logrus"
 
   "github.com/starofservice/carbon/pkg/docker/metadata"
@@ -10,13 +11,12 @@ import (
 )
 
 func TestMain(m *testing.M) {
-    log.Info("Starting docker registry")
-    
-    
+    log.Info("Starting Docker registry")
+
     err := test.DockerRegistryStart()
     if err != nil {
       test.DockerRegistryDelete()
-      log.Fatal("Failed to start docker registry due ot the error: ", err.Error())
+      log.Fatal("Failed to start Docker registry due ot the error: ", err.Error())
     }
 
     code := m.Run()

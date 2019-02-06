@@ -2,7 +2,6 @@ package kubernetes
 
 import (
   "bytes"
-  "fmt"
   "path/filepath"
   "strings"
   "text/template"
@@ -13,8 +12,8 @@ import (
   "github.com/starofservice/carbon/pkg/util/tojson"
 )
 
-func (self *KubeDeployment) VerifyAll(path string) error {
-  log.Debug("Verifying kubernetes templates")
+func (self *KubeInstall) VerifyAll(path string) error {
+  log.Debug("Verifying Kubernetes templates")
   files, err := filepath.Glob(path)
   if err != nil {
     return err
@@ -29,11 +28,11 @@ func (self *KubeDeployment) VerifyAll(path string) error {
   return nil
 }
 
-func (self *KubeDeployment) VerifyTpl(path string) error {
+func (self *KubeInstall) VerifyTpl(path string) error {
   log.Tracef("Verifying %s", path)
   tpl, err := template.ParseFiles(path)
   if err != nil {
-    return errors.Wrapf(err, "parsing Kuberentese manifests template '%s'", path)
+    return errors.Wrapf(err, "parsing Kubernetes manifests template '%s'", path)
   }
 
   tpl.Option("missingkey=error")
@@ -42,16 +41,15 @@ func (self *KubeDeployment) VerifyTpl(path string) error {
   err = tpl.Execute(&data, self.Variables)
   if err != nil {
     if strings.Index(err.Error(), "no entry for key") != -1 || strings.Index(err.Error(), "can't evaluate field") != -1 {
-      return fmt.Errorf("%s\nPlease make sure that all variables are defined at carbon.yaml and use `.Var` prefix for the variables at kubernetes config files", err.Error())
+      return errors.Errorf("%s\nPlease make sure that all variables are defined at carbon.yaml and prefixed by `.Var` at Kubernetes manifest templates", err.Error())
     }
-    return errors.Wrap(err, "building Kuberentese manifests template")
+    return errors.Wrap(err, "building Kubernetes manifests template")
   }
 
   _, err = tojson.ToJSON(data.Bytes())
   if err != nil {
-    return errors.Wrap(err, "converting Kuberentese manifests to JSON")
+    return errors.Wrap(err, "converting Kubernetes manifests to JSON")
   }
 
-  
   return nil
 }

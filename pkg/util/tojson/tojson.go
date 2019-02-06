@@ -3,7 +3,6 @@ package tojson
 import (
   "bytes"
   "encoding/json"
-  "fmt"
   "gopkg.in/yaml.v2"
   "io"
 
@@ -66,7 +65,7 @@ func checkJSON(data []byte) error {
   log.Debug("Trying to verify JSON document")
   trimData := bytes.TrimSpace(data)
   if !bytes.HasPrefix(trimData, []byte(jsonPrefix)) {
-    return fmt.Errorf("Wrong JSON format")
+    return errors.New("Wrong JSON format")
   }
 
   dec := json.NewDecoder(bytes.NewReader(trimData))

@@ -1,19 +1,18 @@
 package cmd
 
 import (
-  "fmt"
   "io/ioutil"
-  "os"
   "path/filepath"
 
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
-
+  
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/minikube"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
+  "github.com/starofservice/carbon/pkg/schema/rootcfg"
 )
 
 var BuildConfig string
@@ -28,14 +27,16 @@ var buildCmd = &cobra.Command{
   Short: "Build Carbon package",
   Long: `
 Builds a Carbon package based on the provided carbon.yaml config.`,
+  SilenceErrors: true,
   Args: func(cmd *cobra.Command, args []string) error {
     if len(args) != 0 {
-      return fmt.Errorf("This command doesn't use any arguments")
+      return errors.New("This command doesn't use any arguments")
     }
     return nil
   },
-  Run: func(cmd *cobra.Command, args []string) {
-    runBuild()
+  RunE: func(cmd *cobra.Command, args []string) error {
+    cmd.SilenceUsage = true
+    return errors.Wrap(runBuild(), "build")
   },
 }
 
@@ -50,7 +51,7 @@ func init() {
   buildCmd.Flags().StringVar(&BuildTagSuffix, "tag-suffix", "", "Suffix which should be added for all tags")
 }
 
-func runBuild() {
+func runBuild() error {
   log.Info("Starting Carbon build")
 
   if BuildRemove && !BuildPush {
@@ -58,96 +59,82 @@ func runBuild() {
     BuildRemove = false
   }
 
+  if minikube.Enabled && BuildPush {
+    log.Warn("Push can't be used with Minikube mode. Skipping it.")
+    BuildPush = false
+  }
+
   if minikube.Enabled {
     err := minikube.SetDockerEnv()
     if err != nil {
-      log.Fatal(err.Error())
-      // TODO Remove all os.Exit becuase log.Fatal is doint the job
-      os.Exit(1)
+      return errors.Wrap(err, "setting up Docker environment variables from Minikube")
     }
   }
 
   log.Info("Reading Carbon config")
   cfgPath, err := filepath.Abs(BuildConfig)
   if err != nil {
-    log.Fatalf("Failed to find Carbon config due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "looking for Carbon config")
   }
 
   cfgBody, err := ioutil.ReadFile(cfgPath)
   if err != nil {
-    log.Fatalf("Failed to read Carbon config due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "reading Carbon config")
   }
 
   cfg, err := rootcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody)
   if err != nil {
-    log.Fatalf("Failed to parse Carbon config due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "parsing Carbon config")
   }
 
   if cfg.HookDefined(rootcfg.HookPreBuild) {
     log.Info("Running pre-build hook")
-    err = cfg.RunHook(rootcfg.HookPreBuild)
-    if err != nil {
-      log.Fatalf("Failed to run pre-build hook due to the error: %s", err.Error())
-      os.Exit(1)
+    if err = cfg.RunHook(rootcfg.HookPreBuild); err != nil {
+      return errors.Wrap(err, "running pre-biuld hooks")
     }    
   }
 
-  // kubeManif, err := kubernetes.ReadTemplates(cfg.Data.KubeManifests)
   kubeManif, err := kubernetes.ReadTemplates(cfg)
   if err != nil {
-    log.Fatalf("Failed to read Kubernetes configs due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "reading Kubernetes manifest templates")
   }
 
   meta := pkgmeta.New(cfg, cfgBody, kubeManif)
 
-  kd, err := kubernetes.NewKubeDeployment(meta, "image", "tag")
+  kd, err := kubernetes.NewKubeInstall(meta, "image", "tag")
   if err != nil {
-    log.Fatalf("Failed to create new instance of KubeDeploy due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "creating new instance of KubeInstall")
   }
 
-  err = kd.VerifyAll(cfg.Data.KubeManifests)
-  if err != nil {
-    log.Fatalf("Failed to verify Kubernetes configs due to the error: %s", err.Error())
-    os.Exit(1)
-
+  if err = kd.VerifyAll(cfg.Data.KubeManifests); err != nil {
+    return errors.Wrap(err, "verifying Kubernetes configs")
   }
 
   metaMap, err := meta.Serialize()
   if err != nil {
-    log.Fatalf("Failed to serialize Carbon config due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "serializing Carbon config")
   }
 
   log.Info("Building Carbon package")
   dockerBuild, err := dockerbuild.NewOptions(cfg, filepath.Dir(cfgPath))
   if err != nil {
-    log.Fatalf("Failed to create Docker build handler due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "creating Docker build handler")
   }
   dockerBuild.ExtendTags(BuildTags, BuildTagPrefix, BuildTagSuffix)
 
-  err = dockerBuild.Build(metaMap)
-  if err != nil {
-    log.Fatalf("Failed to build Carbon package due to the error: %s", err.Error())
-    os.Exit(1)
+  if err = dockerBuild.Build(metaMap); err != nil {
+    return errors.Wrap(err, "building Carbon package")
   }
 
   if cfg.HookDefined(rootcfg.HookPostBuild) {
     log.Info("Running post-build hook")
-    err = cfg.RunHook(rootcfg.HookPostBuild)
-    if err != nil {
-      log.Fatalf("Failed to run post-build hook due to the error: %s", err.Error())
-      os.Exit(1)
+    if err = cfg.RunHook(rootcfg.HookPostBuild); err != nil {
+      return errors.Wrap(err, "running post-biuld hooks")
     }
   }
 
   if BuildPush {
-    log.Info("Pushing built docker images")
+    log.Info("Pushing built Docker images")
     dockerBuild.Push()
   }
 
@@ -157,4 +144,5 @@ func runBuild() {
   }
 
   log.Info("Carbon package has been built successfully")
+  return nil
 }

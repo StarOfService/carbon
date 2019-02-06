@@ -5,6 +5,7 @@ import (
   "os"
   "os/exec"
   "time"
+
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 
@@ -23,64 +24,32 @@ const (
 
 var DockerMockTestImage = DockerMockRepo + "/docker-registry-mock:latest"
 
-// func TestMain(m *testing.M) {
-//     log.Info("Starting minikube")
-//     err := MinikubeStart()
-//     if err != nil {
-//       log.Fatal("Failed to start minikube due ot the error: ", err.Error())
-//     }
-
-//     log.Info("Starting docker registry")
-//     err = DockerRegistryStart()
-//     if err != nil {
-//       log.Fatal("Failed to start docker registry due ot the error: ", err.Error())
-//     }
-
-//     code := m.Run()
-
-//     // TODO Defer
-//     log.Info("Deleting minikube")
-//     err = MinikubeDelete()
-//     if err != nil {
-//       log.Fatal("Failed to stop minikube due ot the error: ", err.Error())
-//     }
-
-//     // TODO Defer
-//     log.Info("Deleting docker registry")
-//     err = DockerRegistryDelete()
-//     if err != nil {
-//       log.Fatal("Failed to delete docker registry container due ot the error: ", err.Error())
-//     }
-    
-//     os.Exit(code)
-// }
-
 func MinikubeStart() error {
   log.SetLevel(log.FatalLevel)
   defer log.SetLevel(log.InfoLevel)
 
   err := minikube.CheckStatus()
   if err != nil {
-    err = command.Run("minikube start", "", nil, nil)
+    _ = command.Run("minikube delete", "", nil, os.Stderr)
+    err = command.Run("minikube start", "", nil, os.Stderr)
     if err != nil {
-      return err
+      return errors.Wrap(err, "starting an new Minikube instance")
     }
   }
 
-  err = command.Run("kubectl config use-context minikube", "", nil, nil)
+  err = command.Run("kubectl config use-context minikube", "", nil, os.Stderr)
   if err != nil {
-    log.Errorf("Failed to switch kubectl context to 'minikube' due to the error: %s", err.Error())
-    os.Exit(1)
+    return errors.Wrap(err, "switching kubectl context to 'minikube'")
   }
   return nil
 }
 
 func MinikubeStop() error {
-  return command.Run("minikube stop", "", nil, nil)
+  return command.Run("minikube stop", "", nil, os.Stderr)
 }
 
 func MinikubeDelete() error {
-  return command.Run("minikube delete", "", nil, nil)
+  return command.Run("minikube delete", "", nil, os.Stderr)
 }
 
 func DeferMinikubeDelete() {
@@ -99,13 +68,13 @@ func DockerRegistryStart() error {
   cmdHandler.Stderr = os.Stderr
   err = cmdHandler.Run()
   if err != nil {
-    return errors.Wrap(err, "deleting docker registry mock container")
+    return errors.Wrap(err, "deleting Docker registry mock container")
   }
 
   cmd = fmt.Sprintf("docker run -it -d --rm -p %s:5000 --name %s %s", DockerMockRepo, DockerMockContainerName, DockerMockSrcImg)
   err = command.Run(cmd, "", nil, os.Stderr)
   if err != nil {
-    return errors.Wrap(err, "starting docker registry mock")
+    return errors.Wrap(err, "starting Docker registry mock")
   }
   time.Sleep(5 * time.Second)
 
@@ -115,7 +84,7 @@ func DockerRegistryStart() error {
   cmdHandler.Stderr = os.Stderr
   err = cmdHandler.Run()
   if err != nil {
-    return errors.Wrap(err, "logging in to the docker registry mock")
+    return errors.Wrap(err, "logging in to the Docker registry mock")
   }
 
   cmd = fmt.Sprintf("docker tag %s %s", DockerMockSrcImg, DockerMockTestImage)
@@ -127,7 +96,7 @@ func DockerRegistryStart() error {
   cmd = fmt.Sprintf("docker push %s", DockerMockTestImage)
   err = command.Run(cmd, "", nil, os.Stderr)
   if err != nil {
-    return errors.Wrap(err, "pushing testing image to the mock docker registry")
+    return errors.Wrap(err, "pushing testing image to the mock Docker registry")
   }
 
   cmd = fmt.Sprintf("docker rmi %s", DockerMockTestImage)
@@ -143,6 +112,6 @@ func DockerRegistryDelete() {
   cmd := fmt.Sprintf("docker stop %s", DockerMockContainerName)
   err := command.Run(cmd, "", nil, os.Stderr)
   if err != nil {
-      log.Error("Failed to stop docker registry mock due to the error: ", err)
+      log.Error("Failed to stop Docker registry mock due to the error: ", err)
   }
 }

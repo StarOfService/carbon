@@ -13,7 +13,7 @@ import (
   log "github.com/sirupsen/logrus"
 )
 
-func (self *KubeDeployment) ProcessPatches(data []byte) error {
+func (self *KubeInstall) ProcessPatches(data []byte) error {
   log.Debug("Processing patches")
 
   patches, err := deserialPatchers(data)
@@ -48,7 +48,7 @@ func deserialPatchers(data []byte) ([]Patcher, error) {
   return resp, nil
 }
 
-func (self *KubeDeployment) processPatchers(phs []Patcher) error {
+func (self *KubeInstall) processPatchers(phs []Patcher) error {
   log.Debug("Processing patch handlers")
   for _, ph := range phs {
     var newManifest []byte

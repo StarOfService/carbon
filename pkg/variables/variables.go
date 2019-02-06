@@ -8,7 +8,6 @@ import (
   log "github.com/sirupsen/logrus"
 )
 
-
 type Vars struct {
   Data map[string]string
 }

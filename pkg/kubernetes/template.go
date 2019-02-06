@@ -1,15 +1,15 @@
 package kubernetes
 
 import (
-  "fmt"
   "io/ioutil"
   "path/filepath"
-  log "github.com/sirupsen/logrus"
 
+  "github.com/pkg/errors"
+  log "github.com/sirupsen/logrus"
+  
   "github.com/starofservice/carbon/pkg/schema/rootcfg"
 )
 
-// func ReadTemplates(path string) ([]byte, error) {
 func ReadTemplates(cfg *rootcfg.CarbonConfig) ([]byte, error) {
   log.Debug("Reading kube manifest templates")
   fullPath := filepath.Join(cfg.Cwd, cfg.Data.KubeManifests)
@@ -17,9 +17,9 @@ func ReadTemplates(cfg *rootcfg.CarbonConfig) ([]byte, error) {
   if err != nil {
     return nil, err
   }
-  // TODO: test this:
+
   if len(files) == 0 {
-    return nil, fmt.Errorf("Unable to find Kubernetes manifests at ", fullPath)
+    return nil, errors.Errorf("Unable to find Kubernetes manifests at %s", fullPath)
   }
 
   resp := []byte{}
@@ -35,7 +35,7 @@ func ReadTemplates(cfg *rootcfg.CarbonConfig) ([]byte, error) {
 func addKubeConfig(r *[]byte, path string) error {
   cfg, err := ioutil.ReadFile(path)
   if err != nil {
-    return fmt.Errorf("Got an error when was trying to read `%s`. Error message: %s", path, err.Error())
+    return errors.Wrapf(err, "reading '%s", path)
   }
 
   if len(cfg) > 0 {

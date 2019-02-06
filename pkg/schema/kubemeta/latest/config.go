@@ -3,6 +3,7 @@ package latest
 import (
   "encoding/json"
   "errors"
+  
   "github.com/starofservice/vconf"
 )
 
@@ -15,6 +16,7 @@ type KubeMetadata struct {
   Source        string            `json:"source"`
   Variables     map[string]string `json:"variables"`
   Patches       string            `json:"patches"`
+  Namespace     string            `json:"namespace"`
   Manifest      string            `json:"manifest"`
   // dependencies
 }

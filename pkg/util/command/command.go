@@ -3,7 +3,6 @@ package command
 import (
   "io"
   "os/exec"
-  // "os"
   "strings"
 
   log "github.com/sirupsen/logrus"
@@ -24,7 +23,5 @@ func Run(cmd, cwd string, stdout, stderr io.Writer) error {
   if stderr != nil {
     cmdHandler.Stderr = stderr
   }
-  // cmdHandler.Stdout = os.Stdout
-  // cmdHandler.Stderr = os.Stderr
   return cmdHandler.Run()
 }

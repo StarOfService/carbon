@@ -16,30 +16,16 @@ var dockerEnv = []string{
   "DOCKER_API_VERSION",
 }
 
-func TestMain(m *testing.M) {
-    log.Info("Starting minikube")
-    err := test.MinikubeStart()
-    if err != nil {
-      log.Error("Failed to start minikube due ot the error: ", err.Error())
-    }
-
-    defer test.DeferMinikubeDelete()
-
-    code := m.Run()
-    
-    os.Exit(code)
-}
-
 func TestMinikubeRunning(t *testing.T) {
   err := test.MinikubeStart()
   if err != nil {
-    t.Errorf("Failed to start minikube due ot the error: %s", err.Error())
+    t.Errorf("Failed to start Minikube due ot the error: %s", err.Error())
     return
   }
 
   err = minikube.CheckStatus()
   if err != nil {
-    t.Errorf("Failed to check minikube status. Got the error: %s", err.Error())
+    t.Errorf("Failed to check Minikube status. Got the error: %s", err.Error())
     return
   }
 
@@ -61,33 +47,31 @@ func TestMinikubeRunning(t *testing.T) {
 func TestMinikubeStopped(t *testing.T) {
   err := test.MinikubeStop()
   if err != nil {
-    t.Errorf("Failed to stop minikube due ot the error: %s", err.Error())
+    t.Errorf("Failed to stop Minikube due ot the error: %s", err.Error())
     return
   }
-  // defer test.MinikubeStart()
 
   log.SetLevel(log.FatalLevel)
   defer log.SetLevel(log.InfoLevel)
 
   err = minikube.CheckStatus()
   if err == nil {
-    t.Errorf("Expected a failure, but the minikube statue check has been passed successfully")
+    t.Errorf("Expected a failure, but the Minikube statue check has been passed successfully")
   }
 }
 
 func TestMinikubeDeleted(t *testing.T) {
   err := test.MinikubeDelete()
   if err != nil {
-    t.Errorf("Failed to delete minikube due ot the error: %s", err.Error())
+    t.Errorf("Failed to delete Minikube due ot the error: %s", err.Error())
     return
   }
-  // defer test.MinikubeStart()
 
   log.SetLevel(log.FatalLevel)
   defer log.SetLevel(log.InfoLevel)
   
   err = minikube.CheckStatus()
   if err == nil {
-    t.Errorf("Expected a failure, but the minikube statue check has been passed successfully")
+    t.Errorf("Expected a failure, but the Minikube statue check has been passed successfully")
   }
 }

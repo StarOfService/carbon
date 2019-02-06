@@ -5,6 +5,7 @@ import (
   "os"
 
   "github.com/olekukonko/tablewriter"
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
 
@@ -13,21 +14,31 @@ import (
 )
 
 var inspectCmd = &cobra.Command{
-  Use:   "inspect docker_image [docker_image ...]",
+  Use:   "inspect dockerImage [dockerImage ...]",
   Short: "Show information for a Carbon package",
   Long: `
 Expose Carbon metadata for a given Docker image.
 The image may be either local or remote.`,
+  SilenceErrors: true,
   Args: func(cmd *cobra.Command, args []string) error {
     if len(args) == 0 {
-      return fmt.Errorf("This command requires at least one argument")
+      return errors.New("This command requires at least one argument")
     }
     return nil
   },
-  Run: func(cmd *cobra.Command, args []string) {
+  RunE: func(cmd *cobra.Command, args []string) error {
+    cmd.SilenceUsage = true
+    var success bool = true
     for _, i := range args {
-      runInspect(i)  
+      if err := runInspect(i); err != nil {
+        success = false
+        log.Warnf("Skipping image '%s' due to the error: %s", i, err.Error())
+      }
     }
+    if !success {
+      return errors.New("Carbon failed to insepct for some packages")
+    }
+    return nil
   },
 }
 
@@ -35,19 +46,17 @@ func init() {
   RootCmd.AddCommand(inspectCmd)
 }
 
-func runInspect(image string) {
+func runInspect(image string) error {
   log.Debug("Getting carbon package metadata")
   dm := dockermeta.NewDockerMeta(image)
   labels, err := dm.GetLabels()
   if err != nil {
-    log.Fatalf("Failed to extract Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-    // os.Exit(1)
+    return errors.Wrapf(err, "getting Carbon metadata")
   }
 
   meta, err := pkgmeta.Deserialize(labels)
   if err != nil {
-    log.Fatalf("Failed to deserialize Carbon metadata from the Docker image '%s' due to the error: %s", image, err.Error())
-    // os.Exit(1)
+    return errors.Wrapf(err, "deserializing Carbon metadata")
   }
 
   table := tablewriter.NewWriter(os.Stdout)
@@ -66,4 +75,6 @@ func runInspect(image string) {
   fmt.Println("Version:", meta.Data.PkgVersion)
   fmt.Println("Variables:")
   table.Render()
+  
+  return nil
 }

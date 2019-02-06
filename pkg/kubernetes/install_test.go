@@ -1,29 +1,20 @@
 package kubernetes_test
 
 import (
-  "os"
   "testing"
-  log "github.com/sirupsen/logrus"
-
+ 
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/test"
 )
 
-func TestMain(m *testing.M) {
-    log.Info("Starting minikube")
-    err := test.MinikubeStart()
-    if err != nil {
-      log.Error("Failed to start minikube due ot the error: ", err.Error())
-    }
-    defer test.DeferMinikubeDelete()
-
-    code := m.Run()
-    
-    os.Exit(code)
-}
-
-
 func TestPurgeList(t *testing.T) {
+  t.Log("Starting Minikube")
+  err := test.MinikubeStart()
+  if err != nil {
+    t.Error("Failed to start Minikube due ot the error: ", err.Error())
+    return
+  }
+
   suite := map[string]bool{
     "rbac.authorization.k8s.io/v1/ClusterRole": false,
     "apiextensions.k8s.io/v1beta1/CustomResourceDefinition": false,

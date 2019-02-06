@@ -3,6 +3,7 @@ package latest
 import (
   "encoding/json"
   "errors"
+  
   "github.com/starofservice/vconf"
 )
 

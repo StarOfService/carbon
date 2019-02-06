@@ -3,6 +3,7 @@ package latest
 import (
   yaml "gopkg.in/yaml.v2"
   "errors"
+  
   "github.com/starofservice/vconf"
 )
 

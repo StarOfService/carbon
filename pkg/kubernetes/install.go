@@ -1,38 +1,87 @@
 package kubernetes
 
 import (
+  "bytes"
   "fmt"
-  "os"
   "strings"
+  "text/template"
 
+  "github.com/pkg/errors"
   "github.com/rhysd/go-fakeio"
   log "github.com/sirupsen/logrus"
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-  "k8s.io/cli-runtime/pkg/genericclioptions"
   "k8s.io/client-go/discovery"
   cmdapply "k8s.io/kubernetes/pkg/kubectl/cmd/apply"
-  cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 
-  "github.com/starofservice/carbon/pkg/minikube"
+  "github.com/starofservice/carbon/pkg/util/tojson"
 )
 
-func (self *KubeDeployment) Apply(defPWL bool, ns string) error {
-  log.Debug("Applying kubernetes manifests")
+func (self *KubeInstall) UpdateVars(vars map[string]string) {
+  log.Debug("Applying Carbon variables")
 
-  kubeConfigFlags := genericclioptions.NewConfigFlags()
+  for k, v := range vars {
+    log.Tracef("%s: %s", k, v)
+    if _, ok := self.Variables.Var[k]; ok {
+      self.Variables.Var[k] = v  
+    } else {
+      log.Warnf("Variable '%s' is not supported by the current package", k)
+    }
+  }
+}
 
-  if minikube.Enabled {
-    context := minikube.K8sContext
-    kubeConfigFlags.Context = &context
+func (self *KubeInstall) Build() error {
+  log.Debug("Building Kubernetes manifest based on the template from the package and provided variables")
+
+  tpl, err := template.New("kubeManifest").Option("missingkey=zero").Parse(string(self.RawManifest))
+  if err != nil {
+    return errors.Wrap(err, "parsing Kubernetes manifests teamplate")
   }
 
-  matchVersionKubeConfigFlags := cmdutil.NewMatchVersionFlags(kubeConfigFlags)
+  buf := &bytes.Buffer{}
+  err = tpl.Execute(buf, self.Variables)
+  if err != nil {
+    return errors.Wrap(err, "building Kubernetes manifests")
+  }
 
-  f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
-  ioStreams := genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
+  self.BuiltManifest, err = tojson.ToJSON(buf.Bytes())
+  if err != nil {
+    return errors.Wrap(err, "converting Kubernetes manifests to JSON")
+  }
+
+  return nil
+}
+
+func (self *KubeInstall) SetAppLabel() error {
+  log.Debug("Applying Carbon lables for Kubernetes manifests")
+  ops := fmt.Sprintf(`---
+filters:
+  kind: .*
+type: merge
+patch:
+  metadata:
+    labels:
+      managed-by: carbon
+      carbon/component-name: %s
+      carbon/component-version: %s
+`, self.Variables.Pkg.Name, self.Variables.Pkg.Version)
+  
+  patch, err := tojson.ToJSON([]byte(ops))
+  if err != nil {
+    log.Error("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
+    return errors.Wrap(err, "converting Kubernetes patch with Carbon labels to JSON")
+  }
+  if err := self.ProcessPatches(patch); err != nil {
+    return err
+  }
+  return nil
+}
+
+func (self *KubeInstall) Apply(defPWL bool, ns string) error {
+  log.Debug("Applying Kubernetes manifests")
+
+  f, ioStreams := KubeCmdFactory(ns)
 
   cmd := cmdapply.NewCmdApply("kubectl", f, ioStreams)
-  cmd.Flags().Set("context", "minikube")
 
   o := cmdapply.NewApplyOptions(ioStreams)
 
@@ -57,16 +106,18 @@ func (self *KubeDeployment) Apply(defPWL bool, ns string) error {
         o.PruneWhitelist = append(o.PruneWhitelist, i)
       }
     } else {
-      log.Warn("I'm unable to discover kubernetes resources for prune operation. So I'll be using the default prune-whitelist from kubectl apply")
+      log.Warn("I'm unable to discover Kubernetes resources for prune operation. So I'll be using the default prune-whitelist from kubectl apply")
     }
   }
 
-  if ns != "" {
-    o.Namespace = ns
-    o.EnforceNamespace = true
-  }
+  o.Namespace = ns
+  o.EnforceNamespace = true
+  // if ns != "" {
+  //   o.Namespace = ns
+  //   o.EnforceNamespace = true
+  // }
 
-  log.Trace("Final Kubernetes config for being applied: ", string(self.BuiltManifest))
+  log.Trace("Final Kubernetes manifests for being applied: ", string(self.BuiltManifest))
 
   fake := fakeio.Stdin(string(self.BuiltManifest))
   defer fake.Restore()
@@ -77,7 +128,7 @@ func (self *KubeDeployment) Apply(defPWL bool, ns string) error {
     msg := err.Error()
     msg = strings.Replace(msg, `error validating "STDIN": `, "", -1)
     msg = strings.Replace(msg, `; if you choose to ignore these errors, turn validation off with --validate=false`, "", -1)
-    return fmt.Errorf(msg)
+    return errors.Errorf(msg)
   }
 
   return nil
@@ -93,13 +144,13 @@ func GetAllResources() ([]string, error) {
 
   discClient, err := discovery.NewDiscoveryClientForConfig(kubeConfig)
   if err != nil {
-    log.Debugf("Failed to create kubernetes discovery handler due to the error: %s", err.Error())
+    log.Debugf("Failed to create Kubernetes discovery handler due to the error: %s", err.Error())
     return nil, err
   }
 
   apiResList, err := discClient.ServerResources()
   if err != nil {
-    log.Debugf("Failed to receive kubernetes server resources due to the error: %s", err.Error())
+    log.Debugf("Failed to receive Kubernetes server resources due to the error: %s", err.Error())
     return nil, err
   }
 
@@ -171,7 +222,6 @@ func skipResource(res string) bool {
   return false
 }
 
-
    // It doesn't reduce processing time significantly.
    // So I prefer to keep these versions for compatibility
    // with  old Kubernetes versions
@@ -193,9 +243,7 @@ func skipResource(res string) bool {
 //     "apps/v1beta2/StatefulSet",
 //   }
 //   for _, i := range skipRes {
-//     // fmt.Println(rh.Kind, i)
 //     if res == i {
-//       // fmt.Println("continue")
 //       return true
 //     }
 //   }

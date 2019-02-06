@@ -6,11 +6,11 @@ import (
   "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
 )
 
-const defVersion = "0.0.0"
+const DefaultVersion = "0.0.0"
 var VERSION string
 
 func PrintVersion() {
-  v := defVersion
+  v := DefaultVersion
   if VERSION != "" {
     v = VERSION
   }

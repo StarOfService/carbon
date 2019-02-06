@@ -3,56 +3,67 @@ package cmd
 import (
   "fmt"
   "os"
+
   "github.com/olekukonko/tablewriter"
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
-
+  
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
 )
 
-var StatusNamespace string
+// var StatusNamespace string
 var StatusFull bool
-// var statusMetadataNamespace string
+var StatusMetadataNamespace string
 
 var statusCmd = &cobra.Command{
-  Use:   "status [package_name [package_name ...]]",
+  Use:   "status [packageName [packageName ...]]",
   Short: "Show information about installed Carbon packages for your Kubernetes cluster",
   Long: `
 Show information about installed Carbon packages at the current Kubernetes cluster.
 Without arguments all installed packages are listed.
 You can provide name for a specific package(s). In this case a detailed information for the requested package(s) is printed.`,
-  Run: func(cmd *cobra.Command, args []string) {
+  SilenceErrors: true,
+  RunE: func(cmd *cobra.Command, args []string) error {
+    cmd.SilenceUsage = true
     if len(args) == 0 {
-      runStatusAll()  
+      return errors.Wrap(runStatusAll(), "status")
     } else {
+      var success bool = true
       for n, i := range args {
         if n != 0 {
           fmt.Println("")
         }
-        runStatusSingle(i)
+        if err := runStatusSingle(i); err != nil {
+          success = false
+          log.Warnf("Failed to get status for the package '%s' due to the error: %s", i, err.Error())
+        }
       }
-    } 
+      if !success {
+        return errors.New("Carbon failed to get status for some packages")
+      }
+    }
+    return nil 
   },
 }
 
 func init() {
   RootCmd.AddCommand(statusCmd)
 
-  statusCmd.Flags().StringVarP(&StatusNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
+  // statusCmd.Flags().StringVarP(&StatusNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
   statusCmd.Flags().BoolVarP(&StatusFull, "full", "f", false, "Print a full information for a given package(s) (including patches and applied manifests). Disabled by default.")
-  // deployCmd.Flags().StringVar(&statusMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
+  statusCmd.Flags().StringVar(&StatusMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
 }
 
-func runStatusAll() {
-  meta, err := kubemeta.GetAll(getStatusMetadataNamespace())
+func runStatusAll() error {
+  meta, err := kubemeta.GetAll(MetadataNamespace(StatusMetadataNamespace, ""))
   if err != nil {
-    // panic("panic")
-    log.Fatal("Failed to get status for the deployed carbon packages due to the error: ", err.Error())
+    errors.Wrap(err, "getting information for all installed Carbon packages")
   }
 
   if len(meta) == 0 {
     log.Info("Current Kubernetes context doesn't have any Carbon packages installed")
-    return
+    return nil
   }
 
   table := tablewriter.NewWriter(os.Stdout)
@@ -67,13 +78,25 @@ func runStatusAll() {
   table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
   table.SetBorder(false)
   table.Render()
+
+  return nil
 }
 
-func runStatusSingle(pkg string) {
-  meta, err := kubemeta.Get(pkg, getStatusMetadataNamespace())
+func runStatusSingle(pkg string) error {
+  installed, err := kubemeta.IsInstalled(
+    pkg,
+    MetadataNamespace(StatusMetadataNamespace, ""),
+  )
   if err != nil {
-    // panic("panic")
-    log.Fatalf("Failed to get status for the carbon package '%s' due to the error: %s", pkg, err.Error())
+    return errors.Wrap(err, "checking if the package is installed")
+  }
+  if !installed {
+    return errors.New("The package isn't installed")
+  }
+
+  meta, err := kubemeta.Get(pkg, MetadataNamespace(StatusMetadataNamespace, ""))
+  if err != nil {
+    errors.Wrap(err, "getting information for the Carbon packages")
   }
 
   table := tablewriter.NewWriter(os.Stdout)
@@ -98,14 +121,6 @@ func runStatusSingle(pkg string) {
     fmt.Println("Patches:", meta.Data.Patches)
     fmt.Println("Manifest:", meta.Data.Manifest)
   }
-}
 
-func getStatusMetadataNamespace() string {
-  // if statusMetadataNamespace != "" {
-  //   return statusMetadataNamespace
-  // }
-  if StatusNamespace != "" {
-    return StatusNamespace
-  }
-  return "default"
+  return nil
 }

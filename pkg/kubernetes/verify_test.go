@@ -4,6 +4,7 @@ import (
   "io/ioutil"
   "os"
   "testing"
+  
   log "github.com/sirupsen/logrus"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
@@ -73,7 +74,7 @@ func TestKubeTemplateVerify(t *testing.T) {
       defer log.SetLevel(log.InfoLevel)
     }
 
-    tmpfile, err := ioutil.TempFile("", "carbon-test")
+    tmpfile, err := ioutil.TempFile("", "carbon-test-k8s-verify")
     if err != nil {
       t.Errorf(err.Error())
     }
@@ -86,7 +87,7 @@ func TestKubeTemplateVerify(t *testing.T) {
       t.Errorf(err.Error())
     }
 
-    kd := &kubernetes.KubeDeployment{Variables: s.variables}
+    kd := &kubernetes.KubeInstall{Variables: s.variables}
 
     err = kd.VerifyTpl(tmpfile.Name())
     if err != nil && s.valid {

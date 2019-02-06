@@ -1,7 +1,6 @@
 package cmd
 
 import (
-  "fmt"
   "os"
 
   log "github.com/sirupsen/logrus"
@@ -64,12 +63,11 @@ More details can be found here: https://github.com/StarOfService/carbon`,
 
 func Execute() {
   if err := RootCmd.Execute(); err != nil {
-    fmt.Println(err)
-    os.Exit(1)
+    log.Fatal(err.Error())
   }
 }
 
 func init() {
   RootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Set the logging level ('trace'|'debug'|'info'|'warn'|'error'|'fatal') (default 'info')")
-  RootCmd.PersistentFlags().BoolVarP(&rootMinikube, "minikube", "m", false, "Use the local minikube instance instead of remote repositories and kubernetes clusters. May be useful for local development process. Disabled by default.")
+  RootCmd.PersistentFlags().BoolVarP(&rootMinikube, "minikube", "m", false, "Use the local Minikube instance instead of remote repositories and Kubernetes clusters. May be useful for local development process. Disabled by default.")
 }

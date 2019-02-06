@@ -3,6 +3,8 @@ package tojson_test
 import (
   "testing"
 
+  "github.com/stretchr/testify/assert"
+
   "github.com/starofservice/carbon/pkg/util/tojson"
 )
 
@@ -10,7 +12,7 @@ func TestToJSON(t *testing.T) {
   suites := []struct {
     description string
     original    string
-    assert      string
+    expected    string
     valid       bool
   }{
     {
@@ -52,11 +54,14 @@ func TestToJSON(t *testing.T) {
 
     if !s.valid {
       t.Errorf("Assumed the suite data '%s' is invalid, but the it was successfully converted to '%s'", s.original, string(resp))
+      return
     }
 
-    if string(resp) != s.assert {
-      t.Errorf("Test suite object %v doesn't match to the converted data %v", s.assert, string(resp))  
-    }
+    // if string(resp) != s.assert {
+    //   t.Errorf("Test suite object %v doesn't match to the converted data %v", s.assert, string(resp))  
+    // }
+
+    assert.Equal(t, s.expected, string(resp), "they should be equal")
 
   } 
 }

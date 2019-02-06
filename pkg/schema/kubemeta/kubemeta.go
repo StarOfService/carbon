@@ -9,6 +9,7 @@ import (
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
   typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
   "github.com/pkg/errors"
+  log "github.com/sirupsen/logrus"
   "github.com/starofservice/vconf"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
@@ -42,18 +43,37 @@ type Handler struct {
  Namespace string
 }
 
-func IsDeployed(name, ns string) (bool, error) {
+func IsInstalled(name, ns string) (bool, error) {
+  log.Debugf("Checking if a component '%s' is installed", name)
   slist, err := getAllSecrets(ns)
   if err != nil {
     return false, err
   }
 
   for _, i := range slist.Items {
-    if i.ObjectMeta.Name == name {
+    log.Trace("component: ", i.ObjectMeta.Name)
+    if i.ObjectMeta.Name == metaObjectPrefix + name {
       return true, nil
     }
   }
   return false, nil
+}
+
+func Delete(name, ns string) error {
+  log.Debug("Deleting Carbon meatadata for package ", name)
+  secretHandler, err := getSecretHandler(ns)
+  if err != nil {
+    return err
+  }
+
+  o := &metav1.DeleteOptions{}
+
+  err = secretHandler.Delete(metaObjectPrefix + name, o)
+  if err != nil {
+    return err
+  }
+
+  return nil
 }
 
 func Get(name, ns string) (*Handler, error) {
@@ -128,7 +148,7 @@ func secretToHandler(secret *apicorev1.Secret) (*Handler, error) {
   return km, nil
 }
 
-func New(kd *kubernetes.KubeDeployment, patches []byte, ns string) *Handler {
+func New(kd *kubernetes.KubeInstall, patches []byte, ns, mns string) *Handler {
 
   source := kd.Variables.Pkg.DockerName + ":" + kd.Variables.Pkg.DockerTag
   return &Handler{
@@ -139,9 +159,10 @@ func New(kd *kubernetes.KubeDeployment, patches []byte, ns string) *Handler {
       Source: source,
       Variables: kd.Variables.Var,
       Patches: string(patches),
+      Namespace: ns,
       Manifest: string(kd.BuiltManifest),
     },
-    Namespace: ns,
+    Namespace: mns,
   }
 }
 

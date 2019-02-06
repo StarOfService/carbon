@@ -7,9 +7,9 @@ import (
   "github.com/containers/image/transports/alltransports"
   "github.com/containers/image/types"
   "github.com/docker/cli/cli/config"
+  "github.com/docker/distribution/reference"
   "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/term"
-  "github.com/docker/distribution/reference"
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 )
@@ -125,7 +125,7 @@ func (self *DockerMeta) getRemoteMetaLabels(sys *types.SystemContext) (map[strin
 
   imgInspect, err := img.Inspect(ctx)
   if err != nil {
-    log.Debugf("Failed to receive a docker image metadata due to the error: %s", err.Error())
+    log.Debugf("Failed to receive a Docker image metadata due to the error: %s", err.Error())
     return nil, err
   }
 
@@ -143,7 +143,7 @@ func (self *DockerMeta) GetCredentials() (string, string, error) {
   }
 
   if len(creds.Username) == 0 || len(creds.Password) == 0 {
-    return "", "", errors.Errorf("Got an empty docker username or password for a repository '%s'", self.Name())
+    return "", "", errors.Errorf("Got an empty Docker username or password for a repository '%s'", self.Name())
   }
 
   return creds.Username, creds.Password, nil

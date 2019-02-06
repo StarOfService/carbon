@@ -9,8 +9,8 @@ import (
   "os"
   "strings"
 
-  clibuild "github.com/docker/cli/cli/command/image/build"
   "github.com/docker/docker/api/types"
+  clibuild "github.com/docker/cli/cli/command/image/build"
   "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/archive"
   "github.com/docker/docker/pkg/idtools"
@@ -66,14 +66,17 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
       tag = im.Tag()
     }
     
-    fullTag := joinTag(name, (prefix + tag + suffix))
+    fullTag := tag
+    if fullTag != "latest" {
+      fullTag = joinTag(name, (prefix + tag + suffix))
+    }
     self.Tags = append(self.Tags, fullTag)
   }
 }
 
 // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
 func (self *Options) Build(metadata map[string]string) error {
-  log.Debug("Building docker image")
+  log.Debug("Building Docker image")
 
   excludes, err := clibuild.ReadDockerignore(self.ContextPath)
   if err != nil {
@@ -101,10 +104,6 @@ func (self *Options) Build(metadata map[string]string) error {
     Remove:      true,
     Tags:        self.Tags,
   }
-
-  // if suppressOutput() {
-  //   opt.SuppressOutput = true  
-  // }
 
   response, err := self.Client.ImageBuild(context.Background(), ctx, opt)
   if err != nil {
@@ -139,7 +138,7 @@ func (self *Options) Push() error {
 
     response, err := self.Client.ImagePush(context.Background(), i, opt)
     if err != nil {
-      return errors.Wrapf(err, "pushing `%s` docker images", i)
+      return errors.Wrapf(err, "pushing Docker image `%s`", i)
     }
     defer response.Close()
 
@@ -158,7 +157,7 @@ func (self *Options) Remove() error {
 
     response, err := self.Client.ImageRemove(context.Background(), i, opt)
     if err != nil {
-      return errors.Wrapf(err, "removing `%s` docker images", i)
+      return errors.Wrapf(err, "removing Docker image `%s`", i)
     }
     for _, i := range response {
       if i.Untagged != "" {

@@ -1,9 +1,9 @@
 package base64
 
 import (
-  "fmt"
   "encoding/base64"
 
+  "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 )
 
@@ -16,7 +16,7 @@ func Decode(data string) ([]byte, error) {
   log.Debug("Decoding data from Base64 format")
   resp, err := base64.StdEncoding.DecodeString(data)
   if err != nil {
-    return nil, fmt.Errorf("Unable to decode string `%s` due to the error: %s", data, err.Error())
+    return nil, errors.Wrapf(err, "decoding string `%s`", data)
   }
   return resp, nil
 }

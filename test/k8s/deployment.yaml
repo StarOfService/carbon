@@ -26,3 +26,17 @@ spec:
             - -ams_ddbtable={{.Var.Environment}}-{{.Pkg.Name}}
             - -ams_ddbregion={{if (or (eq .Var.Environment "sandbox") (eq .Var.Environment "local"))}}eu-west-1{{else}}eu-central-1{{end}}
             - -logtostderr=true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{.Pkg.Name}}'
+  labels:
+    app: '{{.Pkg.Name}}'
+spec:
+  selector:
+    app: '{{.Pkg.Name}}'
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 9376
