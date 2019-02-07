@@ -27,7 +27,8 @@ func GetCurrentVersion(data []byte) (string, error) {
   }
   version := &VersionStruct{}
   if err := json.Unmarshal(data, version); err != nil {
-    return "", errors.Wrap(err, "parsing api version")
+    // return "", errors.Wrap(err, "parsing api version")
+    return "", errors.New("provided image doesn't look like a Carbon package")
   }
   return version.APIVersion, nil
 }

@@ -2,9 +2,11 @@ package latest
 
 import (
   yaml "gopkg.in/yaml.v2"
-  "errors"
-  
+
+  "github.com/pkg/errors"
   "github.com/starofservice/vconf"
+
+  "github.com/starofservice/carbon/pkg/schema/rootcfg/defval"
 )
 
 const Version string = "v1alpha1"
@@ -43,6 +45,20 @@ func (c *CarbonConfig) GetVersion() string {
 func (c *CarbonConfig) Parse(contents []byte) error {
   if err := yaml.UnmarshalStrict(contents, c); err != nil {
     return err
+  }
+
+  if c.Name == "" {
+    return errors.New("'name' parameter isn't defined")
+  }
+  if c.Version == "" {
+    return errors.New("'version' parameter isn't defined")
+  }
+  if c.KubeManifests == "" {
+    return errors.New("'kubeManifests' parameter isn't defined")
+  }
+
+  if c.Dockerfile == "" {
+    c.Dockerfile = defval.Dockerfile
   }
 
   return nil

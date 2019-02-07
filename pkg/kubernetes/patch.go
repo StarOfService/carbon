@@ -106,7 +106,7 @@ func (self *Patcher) Apply(original []byte) ([]byte, error) {
     modified, err = jsonpatch.MergePatch(original, self.Patch)
     if err != nil {
       log.Error("Patch data: ", string(self.Patch))
-      log.Error("Kubernetes manifest data: ", original)
+      log.Error("Kubernetes manifest data: ", string(original))
       return original, errors.Wrap(err, "applying merge patch for Kuberentese manifest")
     }
   case "json":
@@ -118,7 +118,7 @@ func (self *Patcher) Apply(original []byte) ([]byte, error) {
     modified, err = jp.Apply(original)
     if err != nil {
       log.Error("Patch data: ", string(self.Patch))
-      log.Error("Kubernetes manifest data: ", original)
+      log.Error("Kubernetes manifest data: ", string(original))
       return original, errors.Wrap(err, "applying json patch for Kubernetes manifest")
     }
   default:
@@ -133,7 +133,7 @@ func (self *Patcher) MatchObj(data []byte) (bool, error) {
   gjp, err := gabs.ParseJSON(data)
   if err != nil {
     log.Error("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
-    log.Error("Kubernetes manifest data: ", data)
+    log.Error("Kubernetes manifest data: ", string(data))
     return false, errors.Wrap(err, "parsing Kubernetes manifest JSON data")
   }
 

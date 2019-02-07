@@ -36,7 +36,7 @@ The image may be either local or remote.`,
       }
     }
     if !success {
-      return errors.New("Carbon failed to insepct for some packages")
+      return errors.New("Carbon failed to insepct some packages")
     }
     return nil
   },
