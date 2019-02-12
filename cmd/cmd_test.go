@@ -10,7 +10,7 @@ import (
 
   carboncmd "github.com/starofservice/carbon/cmd"
   "github.com/starofservice/carbon/pkg/minikube"
-  rclatest "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
+  rclatest "github.com/starofservice/carbon/pkg/schema/pkgcfg/latest"
   "github.com/starofservice/carbon/pkg/test"
   "github.com/starofservice/carbon/pkg/version"
 )

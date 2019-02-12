@@ -1,36 +1,36 @@
 package latest
 
 import (
-  yaml "gopkg.in/yaml.v2"
+  "encoding/json"
 
   "github.com/pkg/errors"
   "github.com/starofservice/vconf"
 
-  "github.com/starofservice/carbon/pkg/schema/rootcfg/defval"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg/defval"
 )
 
 const Version string = "v1alpha1"
 
 type CarbonConfigVariable struct {
-  Name        string `yaml:"name"`
-  Default     string `yaml:"default"`
-  Description string `yaml:"description"`
+  Name        string `json:"name"`
+  Default     string `json:"default"`
+  Description string `json:"description"`
 }
 
 type CarbonConfigHooks struct {
-  PreBuild  []string `yaml:"pre-build"`
-  PostBuild []string `yaml:"post-build"`
+  PreBuild  []string `json:"pre-build"`
+  PostBuild []string `json:"post-build"`
 }
 
 type CarbonConfig struct {
-  APIVersion    string     `yaml:"apiVersion"`
-  Name          string     `yaml:"name"`
-  Version       string     `yaml:"version"`
-  Dockerfile    string     `yaml:"dockerfile"`
-  KubeManifests string     `yaml:"kubeManifests"`
-  Artifacts     []string   `yaml:"artifacts"`
-  Variables     []CarbonConfigVariable `yaml:"variables"`
-  Hooks         CarbonConfigHooks `yaml:"hooks"`
+  APIVersion    string     `json:"apiVersion"`
+  Name          string     `json:"name"`
+  Version       string     `json:"version"`
+  Dockerfile    string     `json:"dockerfile"`
+  KubeManifests string     `json:"kubeManifests"`
+  Artifacts     []string   `json:"artifacts"`
+  Variables     []CarbonConfigVariable `json:"variables"`
+  Hooks         CarbonConfigHooks `json:"hooks"`
   // dependencies
 }
 
@@ -43,7 +43,7 @@ func (c *CarbonConfig) GetVersion() string {
 }
 
 func (c *CarbonConfig) Parse(contents []byte) error {
-  if err := yaml.UnmarshalStrict(contents, c); err != nil {
+  if err := json.Unmarshal(contents, c); err != nil {
     return err
   }
 

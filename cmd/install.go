@@ -23,8 +23,6 @@ var InstallVarFiles []string
 var InstallPatches []string
 var InstallPatchFiles []string
 var InstallDefaultPWL bool
-var InstallNamespace string
-var InstallMetadataNamespace string
 
 var installCmd = &cobra.Command{
   Use:   "install image",
@@ -53,8 +51,6 @@ func init() {
   installCmd.Flags().StringArrayVar(&InstallVarFiles, "var-file", []string{}, "Define file with values for a package variables")
   installCmd.Flags().StringArrayVar(&InstallPatches, "patch", []string{}, "Apply directly typed patch for the manifest")
   installCmd.Flags().StringArrayVar(&InstallPatchFiles, "patch-file", []string{}, "Apply patch from a file for the Kubernetes manifest")
-  installCmd.Flags().StringVarP(&InstallNamespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
-  installCmd.Flags().StringVar(&InstallMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
   installCmd.Flags().BoolVar(&InstallDefaultPWL, "default-prune-white-list", false, "Use the default prune white-list for the kubect apply operation. Enabling this option speeds-up deployment, but not all resource versions are pruned")
 }
 
@@ -110,18 +106,17 @@ func runInstall(image string) error {
   }
 
   log.Info("Applying kubernetes configuration")
-  if err = kinstall.Apply(InstallDefaultPWL, AppNamespace(InstallNamespace)); err != nil {
+  if err = kinstall.Apply(InstallDefaultPWL); err != nil {
     log.Error("Failed to apply Kubernetes configuration due to the error: ", err.Error())
     return revertInstall(kinstall)
   }
 
   log.Info("Saving Carbon package metadata")
-  kmeta := kubemeta.New(
-    kinstall,
-    patches,
-    AppNamespace(InstallNamespace),
-    MetadataNamespace(InstallMetadataNamespace, InstallNamespace),
-  )
+  kmeta, err := kubemeta.New(kinstall, patches)
+  if err != nil {
+    return errors.Wrap(err, "creating package metadata for Kubernetes")
+  }
+
   if err = kmeta.Apply(); err != nil {
     log.Error("Failed to save Carbon packge metadata due to the error: ", err.Error())
     return revertInstall(kinstall)
@@ -151,10 +146,7 @@ func parseVars() (map[string]string, error) {
 func revertInstall(kinstall *kubernetes.KubeInstall) error {
   log.Error("Trying to revert changes")
 
-  installed, err := kubemeta.IsInstalled(
-    kinstall.Variables.Pkg.Name,
-    MetadataNamespace(InstallMetadataNamespace, InstallNamespace),
-  )
+  installed, err := kubemeta.IsInstalled(kinstall.Variables.Pkg.Name)
   if err != nil {
     return errors.Wrap(err, "checking if a preveous version of the package is installed")
   }
@@ -162,16 +154,14 @@ func revertInstall(kinstall *kubernetes.KubeInstall) error {
     return errors.Errorf("The package '%s' has never been installed yet. Nothing to do.", kinstall.Variables.Pkg.Name)
   }
 
-  kmeta, err := kubemeta.Get(
-    kinstall.Variables.Pkg.Name,
-    MetadataNamespace(InstallMetadataNamespace, InstallNamespace),
-  )
+  kmeta, err := kubemeta.Get(kinstall.Variables.Pkg.Name)
   if err != nil {
     return errors.Wrap(err, "getting previous Kubernetes configuration")
   }
 
   kinstall.BuiltManifest = []byte(kmeta.Data.Manifest)
-  if err = kinstall.Apply(InstallDefaultPWL, AppNamespace(InstallNamespace)); err != nil {
+
+  if err = kinstall.Apply(InstallDefaultPWL); err != nil {
     return errors.Wrap(err, "applying previous Kubernetes configuration")
   }
 

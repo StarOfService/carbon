@@ -19,7 +19,7 @@ Any Carbon patch consists of 3 fields:
 ### Filters
 Every filter rule is a key-value pair, where:
 - *key* is a slash-separated path to a field containing a string as a value
-- *value* is a (regular expression)[https://github.com/google/re2/wiki/Syntax]
+- *value* is a [regular expression](https://github.com/google/re2/wiki/Syntax)
 
 Filters section may contain multiple rules. A patch from the `patch` sction is applied only for the resources which match to all filters
 
@@ -31,8 +31,8 @@ This field cat have only one of two values:
 ### Patch
 This field contains a patch corresponding to a time from the `type` section.
 A comprehensive information for every type can be fond here:
-- (Merge Patch, RFC7386)[https://tools.ietf.org/html/rfc7386]
-- (JSON Patch, RFC6902)[https://tools.ietf.org/html/rfc6902]
+- [Merge Patch, RFC7386](https://tools.ietf.org/html/rfc7386)
+- [JSON Patch, RFC6902](https://tools.ietf.org/html/rfc6902)
 
 ### Examples
 Add 'managed-by' label for all resources:

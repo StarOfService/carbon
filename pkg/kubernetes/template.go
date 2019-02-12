@@ -7,10 +7,10 @@ import (
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg"
 )
 
-func ReadTemplates(cfg *rootcfg.CarbonConfig) ([]byte, error) {
+func ReadTemplates(cfg *pkgcfg.CarbonConfig) ([]byte, error) {
   log.Debug("Reading kube manifest templates")
   fullPath := filepath.Join(cfg.Cwd, cfg.Data.KubeManifests)
   files, err := filepath.Glob(fullPath)

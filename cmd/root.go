@@ -6,13 +6,14 @@ import (
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
 
+  "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/minikube"
 )
 
 var logLevel string
 var rootMinikube bool
+var namespace string
 
-// RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
   Use:   "carbon",
   Short: "Carbon is a Kubernetes package management command-line utility.",
@@ -58,6 +59,7 @@ More details can be found here: https://github.com/StarOfService/carbon`,
       minikube.Enabled = true
     }
 
+    kubernetes.SetNamespace(namespace)
   },
 }
 
@@ -70,4 +72,6 @@ func Execute() {
 func init() {
   RootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Set the logging level ('trace'|'debug'|'info'|'warn'|'error'|'fatal') (default 'info')")
   RootCmd.PersistentFlags().BoolVarP(&rootMinikube, "minikube", "m", false, "Use the local Minikube instance instead of remote repositories and Kubernetes clusters. May be useful for local development process. Disabled by default.")
+  RootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
+
 }

@@ -9,7 +9,7 @@ import (
   "github.com/starofservice/vconf"
 
   "github.com/starofservice/carbon/pkg/schema/pkgmeta/latest"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg"
   "github.com/starofservice/carbon/pkg/util/base64"
 )
 
@@ -37,7 +37,7 @@ type PackageConfig struct {
  Data latest.PackageConfig
 }
 
-func New(mainCfg *rootcfg.CarbonConfig, rawMainCfg, rawKubeCfg []byte) *PackageConfig {
+func New(mainCfg *pkgcfg.CarbonConfig, rawMainCfg, rawKubeCfg []byte) *PackageConfig {
   mainCfgB64 := base64.Encode(rawMainCfg)
   kubeCfgB64 := base64.Encode(rawKubeCfg)
 

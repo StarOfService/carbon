@@ -20,17 +20,17 @@ import (
   log "github.com/sirupsen/logrus"
 
   dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg"
 )
 
 type Options struct {
   Client *client.Client
   ContextPath string
-  RootConfig *rootcfg.CarbonConfig
+  RootConfig *pkgcfg.CarbonConfig
   Tags []string
 }
 
-func NewOptions(cfg *rootcfg.CarbonConfig, ctxPath string) (*Options, error) {
+func NewOptions(cfg *pkgcfg.CarbonConfig, ctxPath string) (*Options, error) {
   cli, err := client.NewEnvClient()
   if err != nil {
     return nil, errors.Wrap(err, "creating Docker client")

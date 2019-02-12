@@ -9,8 +9,6 @@ import (
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
 )
 
-var DeleteMetadataNamespace string
-
 var deleteCmd = &cobra.Command{
   Use:   "delete packageName [packageName ...]",
   Short: "Delete Carbon packages from your Kubernetes cluster",
@@ -45,17 +43,12 @@ var deleteCmd = &cobra.Command{
 
 func init() {
   RootCmd.AddCommand(deleteCmd)
-
-  deleteCmd.Flags().StringVar(&DeleteMetadataNamespace, "metadata-namespace", "", "Namespace where Carbon has to keep its metadata. Current parameter has precendance over `namespace` and should be used for muli-namespaced environments")
 }
 
 func runDelete(pkg string) error {
   log.Info("Deleting Carbon package", pkg)
 
-  installed, err := kubemeta.IsInstalled(
-    pkg,
-    MetadataNamespace(DeleteMetadataNamespace, ""),
-  )
+  installed, err := kubemeta.IsInstalled(pkg)
   if err != nil {
     return errors.Wrap(err, "checking if the package is installed")
   }
@@ -63,10 +56,7 @@ func runDelete(pkg string) error {
     return errors.New("The package isn't installed")
   }
 
-  kmeta, err := kubemeta.Get(
-    pkg,
-    MetadataNamespace(DeleteMetadataNamespace, ""),
-  )
+  kmeta, err := kubemeta.Get(pkg)
   if err != nil {
     return errors.Wrap(err, "getting package metadata")
   }
@@ -76,7 +66,7 @@ func runDelete(pkg string) error {
     return errors.Wrap(err, "deleting Kubernetes resources")
   }
 
-  err = kubemeta.Delete(pkg, MetadataNamespace(DeleteMetadataNamespace, ""))
+  err = kmeta.Delete()
   if err != nil {
     log.Error("Failed to delete metadata for the package due to the error: ", err.Error())
     return errors.Wrap(err, "deleting Carbon package metadata")

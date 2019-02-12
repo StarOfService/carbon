@@ -7,12 +7,12 @@ import (
 
   apicorev1 "k8s.io/api/core/v1"
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-  typedcorev1 "k8s.io/client-go/kubernetes/typed/core/v1"
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/starofservice/vconf"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
+  "github.com/starofservice/carbon/pkg/schema/carboncfg"
   "github.com/starofservice/carbon/pkg/schema/kubemeta/latest"
 )
 
@@ -39,13 +39,19 @@ func GetCurrentVersion(data []byte) (string, error) {
 }
 
 type Handler struct {
- Data latest.KubeMetadata
- Namespace string
+  Data latest.KubeMetadata
+  Namespace string
 }
 
-func IsInstalled(name, ns string) (bool, error) {
+func IsInstalled(name string) (bool, error) {
   log.Debugf("Checking if a component '%s' is installed", name)
-  slist, err := getAllSecrets(ns)
+
+  mns, err := carboncfg.MetaNamespace()
+  if err != nil {
+    return false, err
+  }
+
+  slist, err := getAllSecrets(mns)
   if err != nil {
     return false, err
   }
@@ -59,16 +65,15 @@ func IsInstalled(name, ns string) (bool, error) {
   return false, nil
 }
 
-func Delete(name, ns string) error {
-  log.Debug("Deleting Carbon meatadata for package ", name)
-  secretHandler, err := getSecretHandler(ns)
+func (self *Handler) Delete() error {
+  log.Debug("Deleting Carbon meatadata for package ", self.Data.Name)
+
+  secretHandler, err := kubernetes.GetSecretHandler(self.Namespace)
   if err != nil {
     return err
   }
 
-  o := &metav1.DeleteOptions{}
-
-  err = secretHandler.Delete(metaObjectPrefix + name, o)
+  err = secretHandler.Delete(metaObjectPrefix + self.Data.Name, &metav1.DeleteOptions{})
   if err != nil {
     return err
   }
@@ -76,10 +81,14 @@ func Delete(name, ns string) error {
   return nil
 }
 
-func Get(name, ns string) (*Handler, error) {
+func Get(name string) (*Handler, error) {
   // log.Debug("Processing Kubernete metadata")
+  mns, err := carboncfg.MetaNamespace()
+  if err != nil {
+    return nil, err
+  }
 
-  secretHandler, err := getSecretHandler(ns)
+  secretHandler, err := kubernetes.GetSecretHandler(mns)
   if err != nil {
     return nil, err
   }
@@ -89,39 +98,31 @@ func Get(name, ns string) (*Handler, error) {
     return nil, err
   }
 
-  return secretToHandler(secretObject)
+  return secretToHandler(secretObject, mns)
 }
 
-
-func GetAll(ns string) ([]*Handler, error) {
-  // secretHandler, err := getSecretHandler(ns)
-  // if err != nil {
-  //   return nil, err
-  // }
-
-  // label := fmt.Sprintf("%s=%s", metaObjectLabelKey, metaObjectLabelValue)
-  // slist, err := secretHandler.List(metav1.ListOptions{LabelSelector: label})
-  // if err != nil {
-  //   return nil, err
-  // }
-  slist, err := getAllSecrets(ns)
+func GetAll() ([]*Handler, error) {
+  mns, err := carboncfg.MetaNamespace()
   if err != nil {
     return nil, err
   }
 
   var resp []*Handler
-  for _, i := range slist.Items {
-    km, err := secretToHandler(&i)
+  slist, err := getAllSecrets(mns)
+  if err != nil {
+    return nil, errors.Wrap(err, "getting secret list")
+  }
+  for _, si := range slist.Items {
+    km, err := secretToHandler(&si, mns)
     if err != nil {
-      return nil, err
+      return nil, errors.Wrapf(err, "extracting installed package metadata from a secret '%s' in namespace '%s'", si.ObjectMeta.Name, mns)
     }
     resp = append(resp, km)
   }
-
   return resp, nil
 }
 
-func secretToHandler(secret *apicorev1.Secret) (*Handler, error) {
+func secretToHandler(secret *apicorev1.Secret, mns string) (*Handler, error) {
   data := secret.Data[metaObjectKey]
 
   current, err := GetCurrentVersion(data)
@@ -142,13 +143,18 @@ func secretToHandler(secret *apicorev1.Secret) (*Handler, error) {
   parsedCfg := cfg.(*latest.KubeMetadata)
   km := &Handler{
     Data: *parsedCfg,
-    Namespace: "",
+    Namespace: mns,
   }
 
   return km, nil
 }
 
-func New(kd *kubernetes.KubeInstall, patches []byte, ns, mns string) *Handler {
+// func New(kd *kubernetes.KubeInstall, patches []byte, ns, mns string) *Handler {
+func New(kd *kubernetes.KubeInstall, patches []byte) (*Handler, error) {
+  mns, err := carboncfg.MetaNamespace()
+  if err != nil {
+    return nil, err
+  }
 
   source := kd.Variables.Pkg.DockerName + ":" + kd.Variables.Pkg.DockerTag
   return &Handler{
@@ -159,14 +165,33 @@ func New(kd *kubernetes.KubeInstall, patches []byte, ns, mns string) *Handler {
       Source: source,
       Variables: kd.Variables.Var,
       Patches: string(patches),
-      Namespace: ns,
+      Namespace: kubernetes.CurrentNamespace,
       Manifest: string(kd.BuiltManifest),
     },
     Namespace: mns,
-  }
+  }, nil
 }
 
 func (self *Handler) Apply() error {
+  mns, err := carboncfg.MetaNamespace()
+  if err != nil {
+    return err
+  }
+
+  if mns == kubernetes.GlobalCarbonNamespace {
+    nsExists, err := kubernetes.CheckCarbonNamespace(kubernetes.GlobalCarbonNamespace)
+    if err != nil {
+      return errors.Wrapf(err, "looking for '%s' namespace", kubernetes.GlobalCarbonNamespace)
+    }
+
+    if !nsExists {
+      err = kubernetes.CreateGlobalCarbonNamespace()
+      if err != nil {
+        return errors.Wrapf(err, "creating '%s' namespace", kubernetes.GlobalCarbonNamespace)
+      }
+    }
+  }
+
   data, err := json.Marshal(self.Data)
   if err != nil {
     return err
@@ -181,7 +206,7 @@ func (self *Handler) Apply() error {
     Data: map[string][]byte{metaObjectKey: data},
   }
 
-  secretHandler, err := getSecretHandler(self.Namespace)
+  secretHandler, err := kubernetes.GetSecretHandler(self.Namespace)
   if err != nil {
     return err
   }
@@ -207,7 +232,7 @@ func (self *Handler) Apply() error {
 }
 
 func getAllSecrets(ns string) (*apicorev1.SecretList, error) {
-  secretHandler, err := getSecretHandler(ns)
+  secretHandler, err := kubernetes.GetSecretHandler(ns)
   if err != nil {
     return nil, err
   }
@@ -219,19 +244,6 @@ func getAllSecrets(ns string) (*apicorev1.SecretList, error) {
   }
 
   return slist, nil
-}
-
-func getSecretHandler(namespace string) (typedcorev1.SecretInterface, error) {
-  kubeConfig, err := kubernetes.GetKubeConfig()
-  if err != nil {
-    return nil, err
-  }
-  coreV1Client, err := typedcorev1.NewForConfig(kubeConfig)
-  if err != nil {
-    return nil, err
-  }
-  secretHandler := coreV1Client.Secrets(namespace)
-  return secretHandler, nil
 }
 
 func getMetaName(name string) string {

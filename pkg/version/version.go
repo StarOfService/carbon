@@ -3,7 +3,7 @@ package version
 import (
   "fmt"
 
-  "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg/latest"
 )
 
 const DefaultVersion = "0.0.0"

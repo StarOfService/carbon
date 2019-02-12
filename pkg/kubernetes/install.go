@@ -76,10 +76,10 @@ patch:
   return nil
 }
 
-func (self *KubeInstall) Apply(defPWL bool, ns string) error {
+func (self *KubeInstall) Apply(defPWL bool) error {
   log.Debug("Applying Kubernetes manifests")
 
-  f, ioStreams := KubeCmdFactory(ns)
+  f, ioStreams := KubeCmdFactory(CurrentNamespace)
 
   cmd := cmdapply.NewCmdApply("kubectl", f, ioStreams)
 
@@ -110,7 +110,7 @@ func (self *KubeInstall) Apply(defPWL bool, ns string) error {
     }
   }
 
-  o.Namespace = ns
+  o.Namespace = CurrentNamespace
   o.EnforceNamespace = true
   // if ns != "" {
   //   o.Namespace = ns
@@ -136,7 +136,7 @@ func (self *KubeInstall) Apply(defPWL bool, ns string) error {
 
 func GetAllResources() ([]string, error) {
 
-  kubeConfig, err := GetKubeConfig()
+  kubeConfig, err := KubeConfig()
   if err != nil {
     log.Debugf("Failed to discover location of kubeconfig due to the error: %s", err.Error())
     return nil, err

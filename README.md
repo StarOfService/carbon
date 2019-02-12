@@ -16,18 +16,24 @@ Carbon package is a docker image with additional metadata stored at the image la
 Usage of docker lables allows us to avoid downloading of the whole image for the installation. Carbon just reads a package metadata directly from a registry, builds a Kubernetes manifest based on the templates and applies this manifest to a Kubernetes cluster. Based on the manifest, Kubernetes downloads specified Docker images from a regestry and launches Pods.
 
 ## Content
-- (Available CLI operations)[docs/available_cli_operations.md]
-- (Structure of a Carbon package)[docs/structure_of_a_carbon_package.md]
-- (Main config)[docs/main_config.md]
-- (Kubernetes manifest templates and variables)[docs/kubernetes_manifest_templates_and_variables.md]
-- (Patches)[docs/patches.md]
-- (Docker image names and tags)[docs/docker_image_names_and_tags.md]
-- (Hooks)[docs/hooks.md]
-- (Building a Carbon package without an application code)[docs/building_a_carbon_package_without_an_application_code.md]
-- (Building multiple packages from a shared codebase)[docs/building_multiple_pckages_from_a_shared_codebase.md]
-- (Working with Minikube)[docs/working_with_minikube.md]
+- [Available CLI operations](docs/available_cli_operations.md)
+- [Carbon config](docs/carbon_config.md)
+- [Structure of a Carbon package](docs/structure_of_a_carbon_package.md)
+- [Package config](docs/package_config.md)
+- [Kubernetes manifest templates and variables](docs/kubernetes_manifest_templates_and_variables.md)
+- [Patches](docs/patches.md)
+- [Docker image names and tags](docs/docker_image_names_and_tags.md)
+- [Hooks](docs/hooks.md)
+- [Building a Carbon package without an application code](docs/building_a_carbon_package_without_an_application_code.md)
+- [Building multiple packages from a shared codebase](docs/building_multiple_pckages_from_a_shared_codebase.md)
+- [Installed package metadata](docs/installed_packages_metadata.md)
+- [Working with Minikube](docs/working_with_minikube.md)
 TODO: Fix links. and check other TODOs
 TODO: check english wording
+
+## Limitations (TODO not finished)
+- All resources of a package will be deployed to the same namespace. If you need to deploy resources to different namespaces, we recommend to split such package to different packages
+- If a package has global resources (like ClusterRole or CustomResourceDefinition), it's your responsibility to avoid multiple installations of your package in different Namespaces, especially when you use `cluster` scope (it may be improved in the future).
 
 ## Roadmap
 - `carbon init` - create main Carbon configs for a new package

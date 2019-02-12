@@ -1,15 +1,16 @@
-package rootcfg
+package pkgcfg
 
 import (
-  "gopkg.in/yaml.v2"
+  "encoding/json"
   "os"
 
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/starofservice/vconf"
 
-  "github.com/starofservice/carbon/pkg/schema/rootcfg/latest"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg/latest"
   "github.com/starofservice/carbon/pkg/util/command"
+  "github.com/starofservice/carbon/pkg/util/tojson"
 )
 
 var schemaVersions = map[string]func() vconf.ConfigInterface{
@@ -23,10 +24,10 @@ const (
 
 func GetCurrentVersion(data []byte) (string, error) {
   type VersionStruct struct {
-    APIVersion string `yaml:"apiVersion"`
+    APIVersion string `json:"apiVersion"`
   }
   version := &VersionStruct{}
-  if err := yaml.Unmarshal(data, version); err != nil {
+  if err := json.Unmarshal(data, version); err != nil {
     return "", errors.Wrap(err, "parsing api version")
   }
   return version.APIVersion, nil
@@ -40,7 +41,12 @@ type CarbonConfig struct {
 func ParseConfig(dir string, data []byte) (*CarbonConfig, error) {
   log.Debug("Processing Carbon config")
 
-  current, err := GetCurrentVersion(data)
+  jsonData, err := tojson.ToJSON(data)
+  if err != nil {
+    return nil, err
+  }
+
+  current, err := GetCurrentVersion(jsonData)
   if err != nil {
     return nil, err
   }
@@ -50,7 +56,7 @@ func ParseConfig(dir string, data []byte) (*CarbonConfig, error) {
     sh.RegVersion(k, v)
   }
 
-  cfg, err := sh.GetLatestConfig(current, data)
+  cfg, err := sh.GetLatestConfig(current, jsonData)
   if err != nil {
     return nil, err
   }

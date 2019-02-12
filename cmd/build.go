@@ -11,8 +11,8 @@ import (
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/minikube"
+  "github.com/starofservice/carbon/pkg/schema/pkgcfg"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
-  "github.com/starofservice/carbon/pkg/schema/rootcfg"
 )
 
 var BuildConfig string
@@ -82,14 +82,14 @@ func runBuild() error {
     return errors.Wrap(err, "reading Carbon config")
   }
 
-  cfg, err := rootcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody)
+  cfg, err := pkgcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody)
   if err != nil {
     return errors.Wrap(err, "parsing Carbon config")
   }
 
-  if cfg.HookDefined(rootcfg.HookPreBuild) {
+  if cfg.HookDefined(pkgcfg.HookPreBuild) {
     log.Info("Running pre-build hook")
-    if err = cfg.RunHook(rootcfg.HookPreBuild); err != nil {
+    if err = cfg.RunHook(pkgcfg.HookPreBuild); err != nil {
       return errors.Wrap(err, "running pre-biuld hooks")
     }    
   }
@@ -126,9 +126,9 @@ func runBuild() error {
     return errors.Wrap(err, "building Carbon package")
   }
 
-  if cfg.HookDefined(rootcfg.HookPostBuild) {
+  if cfg.HookDefined(pkgcfg.HookPostBuild) {
     log.Info("Running post-build hook")
-    if err = cfg.RunHook(rootcfg.HookPostBuild); err != nil {
+    if err = cfg.RunHook(pkgcfg.HookPostBuild); err != nil {
       return errors.Wrap(err, "running post-biuld hooks")
     }
   }
