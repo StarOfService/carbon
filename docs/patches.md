@@ -1,7 +1,7 @@
 ## Patches
 Patches are used on a package installation stage in order to apply custom changes, which are not expected by a package developer.
 
-Besides obvious benefits of limitless mofidication of a Kubernetes manifests, this feature may be used as a key factor for separation of areas of responsibility between developers and infrastructure team. Now developers may omit some infrastructure-specific fields, which will be filled by CI platform during the installation.
+Besides obvious benefits of limitless modifications of Kubernetes manifests, this feature may be used as a key factor for separation of areas of responsibility between developers and infrastructure team. Now developers may omit some infrastructure-specific fields, which will be filled by CI platform during the installation.
 
 Carbon supports two standards of patches:
 - Merge Patch, RFC7386
@@ -9,7 +9,7 @@ Carbon supports two standards of patches:
 
 Patches can be provided by `--patch` or `--patch-file` flags. Both flags can be used multiple times
 `--patch` accepts JSON format
-`--patch-file` accespts JSON or YAML format
+`--patch-file` accepts JSON or YAML format
 
 Any Carbon patch consists of 3 fields:
 - `filters`
@@ -21,10 +21,10 @@ Every filter rule is a key-value pair, where:
 - *key* is a slash-separated path to a field containing a string as a value
 - *value* is a [regular expression](https://github.com/google/re2/wiki/Syntax)
 
-Filters section may contain multiple rules. A patch from the `patch` sction is applied only for the resources which match to all filters
+Filters section may contain multiple rules. A patch from the `patch` section is applied only for the resources which match to all filters
 
 ### Type
-This field cat have only one of two values:
+This field can have only one of two values:
 - *merge* for RFC7386 merge patch
 - *json* for RFC6902 json patch
 
