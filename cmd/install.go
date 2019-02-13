@@ -62,10 +62,14 @@ func runInstall(image string) error {
   patches, err := parsePatches()
   if err != nil {
     return errors.Wrap(err, "parsing patches")
-  }  
+  }
 
   log.Info("Getting Carbon package metadata")
-  dm := dockermeta.NewDockerMeta(image)
+  dm, err := dockermeta.NewDockerMeta(image)
+  if err != nil {
+    return errors.Wrap(err, "creating new Docker metadata")
+  }
+
   labels, err := dm.GetLabels()
   if err != nil {
     return errors.Wrap(err, "extract Carbon metadata from the Docker image")

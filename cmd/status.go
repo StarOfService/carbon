@@ -8,7 +8,7 @@ import (
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
-  
+
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
 )
 
@@ -41,7 +41,7 @@ You can provide name for a specific package(s). In this case a detailed informat
         return errors.New("Carbon failed to get status for some packages")
       }
     }
-    return nil 
+    return nil
   },
 }
 

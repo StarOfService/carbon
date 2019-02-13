@@ -1,31 +1,31 @@
 ## Get started with Carbon
-### Install Carbon 
-(TODO - link)
+### Install Carbon
+[Carbon installation](carbon_installation.md)
 
 ### Install Minikube
 Install Minikube (https://kubernetes.io/docs/tasks/tools/install-minikube/) and make sure that Minikube is started: `minikube start` & `minikube status`
 
-### Install Docker 
+### Install Docker
 https://docs.docker.com/install/
 
 ### Clone Carbon git repository
-Clone Carbon git repository (https://github.com/StarOfService/carbon) and change current working directory (CWD) to _./test_ folder
+Clone Carbon git repository (https://github.com/StarOfService/carbon) and change the current working directory (CWD) to _./test_ folder
 
-### Files overview 
+### Files overview
 At the CWD you may find 2 files:
-- Dockerfile - is a standard Dockerfile which will be used for building a Docker image. The one your observing now countains only `FROM scratch`. It's because we don't have any real application which has to be built into the Docker image. When you're be working with a real application, you have to add this application into the Docker image. For more details please check official reference for Dockerfile (https://docs.docker.com/engine/reference/builder/)
-- carbon.yaml - is a package config which contains Carbon-specific parameters related to your packace. More details can be found at [Package config](docs/package_config.md)
+- Dockerfile - is a standard Dockerfile which will be used for building a Docker image. The one you're observing now contains only `FROM scratch`. It's because we don't have any real application which has to be built into the Docker image. When you're be working with a real application, you have to add this application into the Docker image. For more details please check an official Dockerfile reference (https://docs.docker.com/engine/reference/builder/)
+- carbon.yaml - is a package config which contains Carbon-specific parameters related to your package. More details can be found at [Package config](docs/package_config.md)
 
-Also the CWD contains 2 folder:
+Also, the CWD contains 2 folders:
 - k8s - in this folder you can find Kubernetes manifests. The path for manifests if configured by `kubeManifests` parameter at the package config.
 - hooks - here we put lifecycle hooks. If you want to learn more about this feature, please check [Hooks](docs/hooks.md) and `hooks` parameter at the package config
 
 ### Docker image template
-Please open _k8s/deployment.yaml_ file and find _containers_ section at the _Deployment_ reource specification. Pay attention to the this line:
-`image: '{{.Pkg.DockerName}}:{{.Pkg.DockerTag}}'`. As you can see, here's no any real Docker image name, we use template variables instead. We'll return to this point a bit later, on an installation stage.
+Please open _k8s/deployment.yaml_ file and find _containers_ section at the _Deployment_ resource specification. Pay attention to the line:
+`image: '{{.Pkg.DockerName}}:{{.Pkg.DockerTag}}'`. As you can see, it doesn't contain any real Docker image name, we use template variables instead. We'll return to this point a bit later, on an installation stage.
 
 ### Carbon package building
-We've checked content of the working directory and now we're ready to build our first Carbon package. Type: `carbon build -m`. `-m` flag directs Carbon to use Minikube VM which we installed on the 2nd step. The output will be like this:
+We've checked the content of the working directory and now we're ready to build our first Carbon package. Type: `carbon build -m`. `-m` flag directs Carbon to use Minikube VM which we installed on the 2nd step. The output will be like this:
 ```
 $ carbon build -m
 INFO[2019-02-13T10:31:02+03:00] Starting Carbon build
@@ -44,11 +44,11 @@ Successfully tagged carbon-test:0.0.1
 INFO[2019-02-13T10:31:02+03:00] Running post-build hook
 INFO[2019-02-13T10:31:02+03:00] Carbon package has been built successfully
 ```
-You may notice that the significant part of the output is a standard output for `docker build`, but on the second step there's added a huge label. It's a Carbon package metadata which contains some parameters from the package config and base64-encoded Kubernetes manifest templates. Now you can see how Carbon extends Docker image in order to store Kubernetes manifests.
+You may notice that the significant part of the output is standard output for `docker build`, but on the second step, there's added a huge label. It's a Carbon package metadata which contains some parameters from the package config and base64-encoded Kubernetes manifest templates. Now you can see how Carbon extends Docker image in order to store Kubernetes manifests.
 
 ### Docker image inspection
-You can do all standard Docker operations with the Carbon package, for example inspect.
-Due to the `-m` flag, the image was built at the Minikube VM. In order to configure our local Docker client to use Minikube docker daemon, minikube provides a command `minikube docker-env`. Please type this command and follow the instructions for your OS.
+You can do all standard Docker operations with the Carbon package, for example, inspect.
+Due to the `-m` flag, the image was built at the Minikube VM. In order to configure our local Docker client to use Minikube docker daemon, Minikube provides a command `minikube docker-env`. Please type this command and follow the instructions for your OS.
 When the Docker client is configured, we can check the docker image details:
 ```
 $ docker inspect carbon-test:0.0.1
@@ -74,7 +74,7 @@ $ docker inspect carbon-test:0.0.1
     }
 ]
 ```
-As you can see, it's a standard Docker image, which just contains an additional label. Hence you can operate with this image as any other Docker iamge: pull, push, store on a Docker registry, use other third-party tools.
+As you can see, it's a standard Docker image, which just contains an additional label. Hence you can operate with this image as any other Docker image: pull, push, store on a Docker registry, use other third-party tools.
 
 ### Carbon package inspection
 Let's check the information for the Carbon package:
@@ -92,7 +92,7 @@ Variables:
 Here Carbon reads the package metadata from the docker label and exposes basic information about the package:
 - package name
 - package version
-- package variables and default vaues for those variables
+- package variables and default values for those variables
 
 ### Carbon package installation
 Now let's install the package to a Kubernetes cluster:
@@ -112,8 +112,8 @@ clusterrolebinding.rbac.authorization.k8s.io/carbon-test created
 INFO[2019-02-13T11:06:53+03:00] Saving Carbon package metadata
 INFO[2019-02-13T11:06:54+03:00] Carbon package has been installed successfully
 ```
-At the [Docker image template](#docker-image-template) section I showed a template for the _image_ field. The content for those variables is taken from the provided arguments. In our case it's `carbon-test:0.0.1`. It works fine for Minikube, but for a real environment you want to push your image to a remote registry like docker-hub. When you are installing such Carbon package, you provide the remote image identifier. This identifier is passed to the templates and thus Kubernetes uses the same docker image which is used for the installation.
-    
+At the [Docker image template](#docker-image-template) section I showed a template for the _image_ field. The content for those variables is taken from the provided arguments. In our case it's `carbon-test:0.0.1`. It works fine for Minikube, but for a real environment, you want to push your image to a remote registry like docker-hub. When you are installing such Carbon package, you provide the remote image identifier. This identifier is passed to the templates and thus Kubernetes uses the same docker image which is used for the installation.
+
 Feel free to use `kubectl` in order to check just created resources.
 
 ### Installed Carbon packages overview
@@ -125,7 +125,7 @@ $ carbon status -m
 ```
 
 ### Installed Carbon package details
-If we need a detailed information for a specific package, we should provide its name as an argument to the `carbon status` command:
+If we need detailed information for a specific package, we should provide its name as an argument to the `carbon status` command:
 ```
 $ carbon status -m carbon-test
 Namespace: default
@@ -139,9 +139,9 @@ Variables:
   FullName       carbon-test
   KubeNamespace  default
 ```
-We didn't override variables during the installation, that's why here we can see the default values. In fact, current command shows `real` values which were used for the package installation.
+We didn't override variables during the installation, that's why here we can see the default values. In fact, the current command shows `real` values which were used for the package installation.
 
-`carbon status` has an additional `-f/--full` flag, which allows to see the maximum available information about the package, including the eventual Kubernetes manifests:
+`carbon status` has an additional `-f/--full` flag, which allows seeing the maximum available information about the package, including the eventual Kubernetes manifests:
 ```
 $ carbon status -m carbon-test -f
 Namespace: default
@@ -159,7 +159,7 @@ Manifest: {"apiVersion":"apiextensions.k8s.io/v1beta1","kind":"CustomResourceDef
 ```
 
 ### Installed Carbon package uninstallation
-Finally let's clean-up the environment from this testing package:
+Finally, let's clean up the environment from this testing package:
 ```
 $ carbon uninstall -m carbon-test
 INFO[2019-02-13T11:15:36+03:00] Uninstalling Carbon packagecarbon-test
@@ -173,6 +173,6 @@ INFO[2019-02-13T11:15:37+03:00] Carbon packages has been uninstalled successfull
 ```
 
 ### Summary
-As we just showed, Carbon allows to operate (build, distribute and install) with your application and kubernetes manifest as a single package. Now you are able to build a Carbon package, assign version, test a specific version and be sure that when you will be installing the package to your production evnironment, it will be absolutely the same package (with the same application code and kubernetes manifests) which was tested before.
+As we just showed, Carbon allows operating (build, distribute and install) with your application and Kubernetes manifest as a single package. Now you are able to build a Carbon package, assign version, test a specific version and be sure that when you will be installing the package to your production environment, it will be absolutely the same package (with the same application code and kubernetes manifests) which was tested before.
 
 If you want to learn more details about its features and how to build a Carbon package, please return to the [documentation index](../README.md) and check pages dedicated to different aspects of the current tool.

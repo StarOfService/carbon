@@ -3,7 +3,7 @@ package kubernetes
 import (
   log "github.com/sirupsen/logrus"
 
-  "github.com/starofservice/carbon/pkg/schema/pkgmeta"  
+  "github.com/starofservice/carbon/pkg/schema/pkgmeta"
   "github.com/starofservice/carbon/pkg/util/base64"
 )
 

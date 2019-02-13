@@ -36,7 +36,7 @@ func (self *KubeInstall) VerifyTpl(path string) error {
   }
 
   tpl.Option("missingkey=error")
-  
+
   var data bytes.Buffer
   err = tpl.Execute(&data, self.Variables)
   if err != nil {

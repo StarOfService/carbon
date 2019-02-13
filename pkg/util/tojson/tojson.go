@@ -43,7 +43,7 @@ func ToJSON(data []byte) ([]byte, error) {
       log.Errorf("Document:\n%s", d)
       return []byte{}, errors.Wrap(err, "converting YAML document to JSON format")
     }
-    
+
     jsonDocs = append(jsonDocs, jd)
   }
 

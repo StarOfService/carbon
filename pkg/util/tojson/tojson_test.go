@@ -48,7 +48,7 @@ func TestToJSON(t *testing.T) {
       if s.valid {
         t.Errorf("Failed to convert data '%s' to JSON due to the error %s", s.original, err.Error())
       } else {
-        return  
+        return
       }
     }
 
@@ -57,11 +57,7 @@ func TestToJSON(t *testing.T) {
       return
     }
 
-    // if string(resp) != s.assert {
-    //   t.Errorf("Test suite object %v doesn't match to the converted data %v", s.assert, string(resp))  
-    // }
-
     assert.Equal(t, s.expected, string(resp), "they should be equal")
 
-  } 
+  }
 }

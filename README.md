@@ -19,6 +19,7 @@ Carbon package is a Docker image with additional metadata stored at the image la
 Usage of Docker labels allows us to avoid downloading the whole image for the installation. Carbon just reads a package metadata directly from a registry, builds a Kubernetes manifest based on the templates and applies this manifest to a Kubernetes cluster. Based on the manifest, Kubernetes downloads specified Docker images from a registry and launches Pods.
 
 ## Content
+- [Carbon installation](docs/carbon_installation.md)
 - [Available CLI operations](docs/available_cli_operations.md)
 - [Carbon config](docs/carbon_config.md)
 - [Structure of a Carbon package](docs/structure_of_a_carbon_package.md)
@@ -46,7 +47,16 @@ TODO: double-check os.Exit, log.Fatal and fmt.*
 - `carbon config-upgrade` - upgrade a package config to the latest version
 - version constraints and dependencies - provide a possibility to define dependencies among Carbon packages and to install a package only when all version constraints are met
 
+## Community
+TODO
+
 ## Contribution
 While Carbon is an important tool for our engineering department, it isn't a major business goal. Thus we're going to add the features matters for us.
 
 If you need any feature which isn't implemented yet, feel free to propose MR. In the extension of this tool, we count on the community.
+
+### Development environment
+You will need:
+- Any Unix system (Linux, OSX, FreeBSD). Some tests use unix shell commands, thus you will be unable to run test at Windows
+- Minikube
+- Docker

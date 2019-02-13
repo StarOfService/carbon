@@ -39,7 +39,7 @@ func TestMinikubeRunning(t *testing.T) {
   for _, i := range dockerEnv {
     v := os.Getenv(i)
     if len(v) == 0 {
-      t.Errorf("Docker environment variable '%s' is undefined", i)   
+      t.Errorf("Docker environment variable '%s' is undefined", i)
     }
   }
 }
@@ -69,7 +69,7 @@ func TestMinikubeDeleted(t *testing.T) {
 
   log.SetLevel(log.FatalLevel)
   defer log.SetLevel(log.InfoLevel)
-  
+
   err = minikube.CheckStatus()
   if err == nil {
     t.Errorf("Expected a failure, but the Minikube statue check has been passed successfully")

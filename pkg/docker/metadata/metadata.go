@@ -1,4 +1,4 @@
-package metadata  
+package metadata
 
 import (
   "context"
@@ -25,8 +25,7 @@ type DockerMeta struct {
   ref types.ImageReference
 }
 
-func NewDockerMeta(image string) *DockerMeta {
-
+func NewDockerMeta(image string) (*DockerMeta, error) {
   imagePrefixed := image
   if !strings.HasPrefix("docker://", image) {
     imagePrefixed = "docker://" + image
@@ -34,7 +33,7 @@ func NewDockerMeta(image string) *DockerMeta {
 
   ref, err := alltransports.ParseImageName(imagePrefixed)
   if err != nil {
-    panic(err)
+    return nil, errors.Wrap(err, "parsing image name")
   }
 
   self := &DockerMeta{
@@ -42,7 +41,7 @@ func NewDockerMeta(image string) *DockerMeta {
     ref: ref,
   }
 
-  return self
+  return self, nil
 }
 
 func (self *DockerMeta) GetLabels() (map[string]string, error) {
@@ -103,7 +102,7 @@ func (self *DockerMeta) dockerReference() reference.NamedTagged {
 func (self *DockerMeta) getLocalImageLabels() (map[string]string, error) {
   cli, err := client.NewEnvClient()
   if err != nil {
-    panic(err)
+    return nil, errors.Wrap(err, "creating Docker client")
   }
   ctx := context.Background()
 

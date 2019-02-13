@@ -22,7 +22,7 @@ func (self *KubeInstall) UpdateVars(vars map[string]string) {
   for k, v := range vars {
     log.Tracef("%s: %s", k, v)
     if _, ok := self.Variables.Var[k]; ok {
-      self.Variables.Var[k] = v  
+      self.Variables.Var[k] = v
     } else {
       log.Warnf("Variable '%s' is not supported by the current package", k)
     }
@@ -64,7 +64,7 @@ patch:
       carbon/component-name: %s
       carbon/component-version: %s
 `, self.Variables.Pkg.Name, self.Variables.Pkg.Version)
-  
+
   patch, err := tojson.ToJSON([]byte(ops))
   if err != nil {
     log.Error("Most likely it's a bug of the Carbon tool. Please, create an issue for us and provide all possible details.")
@@ -88,7 +88,7 @@ func (self *KubeInstall) Apply(defPWL bool) error {
   err := o.Complete(f, cmd)
   if err != nil {
     return err
-  } 
+  }
 
   o.DeleteOptions.FilenameOptions.Filenames = []string{"-"}
   o.Prune = true
@@ -172,13 +172,13 @@ func procAPIResList (apiResList []*metav1.APIResourceList) []string {
 
       r := fmt.Sprintf("%s/%s", groupVersion, rh.Kind)
       // if skipVersionedResource(r) {
-      //   continue 
+      //   continue
       // }
 
       if rh.Kind == "CustomResourceDefinition" {
         crdResMap[r] = struct{}{}
       } else {
-        genResMap[r] = struct{}{}  
+        genResMap[r] = struct{}{}
       }
     }
   }

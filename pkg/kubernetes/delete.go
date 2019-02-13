@@ -20,7 +20,7 @@ func Delete(manifest, ns string) error {
   err := o.Complete(f, []string{}, cmd)
   if err != nil {
     return err
-  } 
+  }
 
   log.Trace("Kubernetes manifests for being deleted: ", manifest)
 

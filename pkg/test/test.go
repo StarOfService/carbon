@@ -58,7 +58,7 @@ func DeferMinikubeDelete() {
 
 func DockerRegistryStart() error {
   metadata.SkipTLSVerify = true
-  
+
   var cmd string
   var err error
 
@@ -92,7 +92,7 @@ func DockerRegistryStart() error {
   if err != nil {
     return errors.Wrap(err, "assigning tag for the testing image")
   }
-  
+
   cmd = fmt.Sprintf("docker push %s", DockerMockTestImage)
   err = command.Run(cmd, "", nil, os.Stderr)
   if err != nil {

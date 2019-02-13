@@ -2,7 +2,7 @@ package kubernetes_test
 
 import (
   "testing"
- 
+
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/test"
 )
@@ -26,7 +26,7 @@ func TestPurgeList(t *testing.T) {
   allRes, err := kubernetes.GetAllResources()
   if err != nil {
     t.Errorf("Failed to receive all resources list due to the error: %s", err.Error())
-    return 
+    return
   }
 
   for _, i := range allRes {
@@ -36,7 +36,7 @@ func TestPurgeList(t *testing.T) {
       }
     }
   }
-  
+
   for k, v := range suite {
     if !v {
       t.Errorf("Missing resource: %s", k)

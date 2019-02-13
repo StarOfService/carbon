@@ -45,7 +45,7 @@ func NewOptions(cfg *pkgcfg.CarbonConfig, ctxPath string) (*Options, error) {
   return resp, nil
 }
 
-func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) {
+func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) error {
   var selectTags []string
   if len(cliTags) > 0 {
     selectTags = cliTags
@@ -56,22 +56,26 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
   }
 
   for _, i := range selectTags {
-    im := dockermeta.NewDockerMeta(i)
+    im, err := dockermeta.NewDockerMeta(i)
+    if err != nil {
+      return err
+    }
     name := im.Name()
-    
+
     var tag string
     if i == name {
       tag = self.RootConfig.Data.Version
     } else {
       tag = im.Tag()
     }
-    
+
     fullTag := tag
     if fullTag != "latest" {
       fullTag = joinTag(name, (prefix + tag + suffix))
     }
     self.Tags = append(self.Tags, fullTag)
   }
+  return nil
 }
 
 // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
@@ -117,9 +121,11 @@ func (self *Options) Build(metadata map[string]string) error {
 }
 
 func (self *Options) Push() error {
-  
   for _, i := range self.Tags {
-    meta := dockermeta.NewDockerMeta(i)
+    meta, err := dockermeta.NewDockerMeta(i)
+    if err != nil {
+      return err
+    }
     username, password, err := meta.GetCredentials()
     if err != nil {
       return errors.Wrap(err, "getting registry credentials")

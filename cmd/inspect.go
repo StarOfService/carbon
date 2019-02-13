@@ -48,7 +48,11 @@ func init() {
 
 func runInspect(image string) error {
   log.Debug("Getting carbon package metadata")
-  dm := dockermeta.NewDockerMeta(image)
+  dm, err := dockermeta.NewDockerMeta(image)
+  if err != nil {
+    return errors.Wrap(err, "creating new Docker metadata")
+  }
+  
   labels, err := dm.GetLabels()
   if err != nil {
     return errors.Wrapf(err, "getting Carbon metadata")
@@ -75,6 +79,6 @@ func runInspect(image string) error {
   fmt.Println("Version:", meta.Data.PkgVersion)
   fmt.Println("Variables:")
   table.Render()
-  
+
   return nil
 }

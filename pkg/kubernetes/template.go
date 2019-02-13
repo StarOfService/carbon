@@ -6,7 +6,7 @@ import (
 
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
-  
+
   "github.com/starofservice/carbon/pkg/schema/pkgcfg"
 )
 
@@ -27,7 +27,7 @@ func ReadTemplates(cfg *pkgcfg.CarbonConfig) ([]byte, error) {
     err = addKubeConfig(&resp, f)
     if err != nil {
       return nil, err
-    }    
+    }
   }
   return resp, nil
 }

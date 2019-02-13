@@ -7,7 +7,7 @@ import (
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
-  
+
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/minikube"
@@ -84,7 +84,7 @@ func runBuild() error {
     log.Info("Running pre-build hook")
     if err = cfg.RunHook(pkgcfg.HookPreBuild); err != nil {
       return errors.Wrap(err, "running pre-biuld hooks")
-    }    
+    }
   }
 
   kubeManif, err := kubernetes.ReadTemplates(cfg)
@@ -113,7 +113,10 @@ func runBuild() error {
   if err != nil {
     return errors.Wrap(err, "creating Docker build handler")
   }
-  dockerBuild.ExtendTags(BuildTags, BuildTagPrefix, BuildTagSuffix)
+  
+  if err = dockerBuild.ExtendTags(BuildTags, BuildTagPrefix, BuildTagSuffix); err != nil {
+    return errors.Wrap(err, "extending tags")
+  }
 
   if err = dockerBuild.Build(metaMap); err != nil {
     return errors.Wrap(err, "building Carbon package")

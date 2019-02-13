@@ -25,7 +25,7 @@ func (self *KubeInstall) ProcessPatches(data []byte) error {
   if err != nil {
     return err
   }
-  return nil  
+  return nil
 }
 
 func deserialPatchers(data []byte) ([]Patcher, error) {

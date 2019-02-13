@@ -32,7 +32,7 @@ var uninstallCmd = &cobra.Command{
       }
     }
     if success {
-      log.Info("Carbon packages has been uninstalled successfully")  
+      log.Info("Carbon packages has been uninstalled successfully")
     } else {
       return errors.New("Carbon failed to uninstall some packages")
     }

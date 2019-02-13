@@ -3,7 +3,7 @@ package metadata_test
 import (
   "os"
   "testing"
-  
+
   log "github.com/sirupsen/logrus"
 
   "github.com/starofservice/carbon/pkg/docker/metadata"
@@ -26,13 +26,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestDockerRegistryCreds(t *testing.T) {
-  h := metadata.NewDockerMeta(test.DockerMockTestImage)
+  h, err := metadata.NewDockerMeta(test.DockerMockTestImage)
+  if err != nil {
+    t.Errorf(err.Error())
+  }
   u, p, err := h.GetCredentials()
   if err != nil {
     t.Errorf(err.Error())
   }
   if u != test.DockerMockTestUser {
-    t.Errorf("Docker resgistry user doesn't match. Expected: '%s', got: '%s'", test.DockerMockTestUser, u) 
+    t.Errorf("Docker resgistry user doesn't match. Expected: '%s', got: '%s'", test.DockerMockTestUser, u)
   }
   if p != test.DockerMockTestPassword {
     t.Errorf("Docker resgistry password doesn't match. Expected: '%s', got: '%s'", test.DockerMockTestPassword, p)
@@ -49,8 +52,11 @@ func TestDockerImageLabels(t *testing.T) {
   for _, i := range suite {
     t.Log("image:", i)
 
-    h := metadata.NewDockerMeta(test.DockerMockTestImage)
-    _, err := h.GetLabels()
+    h, err := metadata.NewDockerMeta(test.DockerMockTestImage)
+    if err != nil {
+      t.Errorf(err.Error())
+    }
+    _, err = h.GetLabels()
     if err != nil {
       t.Errorf("Failed to receive image lables for '%s' due to the error: '%s'", i, err.Error())
     }

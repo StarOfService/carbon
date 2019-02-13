@@ -24,7 +24,7 @@ Parameter     | Required | Default | Description
 `default`     | false    | ""      | Default value for the variable
 `description` | false    | ""      | Description for the variable
 
-TODO: write requirements for variable names!
+*Variable name may contain alphanumeric symbols and undescores*. But we recommend to use only alphanumeric symbols with CamelCase format.
 
 When you use these variables at a Kubernetes manifest template, they must be prefixed by `.Var.`, for example: `.Var.Environment`.
 

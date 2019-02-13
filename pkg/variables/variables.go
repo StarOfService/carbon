@@ -28,7 +28,7 @@ func (self *Vars) ParseFiles(vf []string) error {
     log.Tracef("Parsing %s", i)
     p, err := l.LoadFile(i)
     if err != nil {
-      return errors.Wrapf(err, "parsing variable file '%s'", i)      
+      return errors.Wrapf(err, "parsing variable file '%s'", i)
     }
 
     for k, v := range p.Map() {

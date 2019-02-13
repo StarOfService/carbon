@@ -48,7 +48,7 @@ func New(mainCfg *pkgcfg.CarbonConfig, rawMainCfg, rawKubeCfg []byte) *PackageCo
       PkgVersion: mainCfg.Data.Version,
       BuildTime: time.Now().Unix(),
       MainConfigB64: mainCfgB64,
-      KubeConfigB64: kubeCfgB64,      
+      KubeConfigB64: kubeCfgB64,
     },
   }
 
@@ -73,7 +73,7 @@ func (self *PackageConfig) Serialize() (map[string]string, error) {
 
 func Deserialize(metaMap map[string]string) (*PackageConfig, error) {
   log.Debug("Deserializing carbon package metadata")
-  
+
   data := []byte(metaMap[carbonMetaLabel])
 
   current, err := GetCurrentVersion(data)

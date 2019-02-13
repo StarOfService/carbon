@@ -170,7 +170,6 @@ func CheckCarbonNamespace(ns string) (bool, error) {
 func CreateGlobalCarbonNamespace() error {
   ns := &apicorev1.Namespace{
     ObjectMeta: metav1.ObjectMeta{
-      // Labels: map[string]string{metaObjectLabelKey: metaObjectLabelValue}, // TODO Check
       Name: GlobalCarbonNamespace,
     },
   }
