@@ -2,18 +2,16 @@ package cmd
 
 import (
   "io/ioutil"
-  "os"
 
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
 
   dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
+  "github.com/starofservice/carbon/pkg/homecfg"
   "github.com/starofservice/carbon/pkg/kubernetes"
-  "github.com/starofservice/carbon/pkg/minikube"
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
-  "github.com/starofservice/carbon/pkg/util/homedir"
   "github.com/starofservice/carbon/pkg/util/tojson"
   "github.com/starofservice/carbon/pkg/variables"
 )
@@ -56,12 +54,6 @@ func init() {
 
 func runInstall(image string) error {
   log.Info("Starting Carbon install")
-
-  if minikube.Enabled {
-    if err := minikube.SetDockerEnv(); err != nil {
-      return errors.Wrap(err, "setting up Docker environment variables from Minikube")
-    }
-  }
 
   vars, err := parseVars()
   if err != nil {
@@ -129,17 +121,18 @@ func runInstall(image string) error {
 
 func parseVars() (map[string]string, error) {
   log.Debug("Parsing variables")
-  homeVarsPath := homedir.Path() + "/" + "carbon.vars"
+
   vars := variables.NewVars()
-  if _, err := os.Stat(homeVarsPath); err == nil {
-   InstallVarFiles = append([]string{homeVarsPath}, InstallVarFiles...)
-  }
+
+  InstallVarFiles = append([]string{homecfg.HomeConfigVarfilePath()}, InstallVarFiles...)
   if err := vars.ParseFiles(InstallVarFiles); err != nil {
     return vars.Data, errors.Wrap(err, "parsing variable files")
   }
+
   if err := vars.ParseFlags(InstallVarFlags); err != nil {
     return vars.Data, errors.Wrap(err, "parsing variable flags")
   }
+
   return vars.Data, nil
 }
 

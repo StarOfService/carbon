@@ -10,11 +10,7 @@ import (
 )
 
 const K8sContext = "minikube"
-var minikubeStatusOk = map[string]string{
-  "minikube": "Running",
-  "cluster": "Running",
-  "kubectl": "Correctly Configured",
-}
+
 var Enabled = false
 var envVars []string
 
@@ -25,23 +21,7 @@ func CheckStatus() error {
     return err
   }
 
-  cntOk := 0
-
-  for _, i := range strings.Split(string(out),"\n") {
-    it := strings.TrimSpace(i)
-    its := strings.SplitN(it, ":", 2)
-    for k, v := range minikubeStatusOk {
-      if its[0] == k && strings.Contains(its[1], v) {
-        cntOk++
-      }      
-    }
-  }
-
-  if cntOk == len(minikubeStatusOk) {
-    return nil
-  }
-
-  return errors.Errorf("Unable to define Minikube status\n%s", out)
+  return nil
 }
 
 func SetDockerEnv() error {

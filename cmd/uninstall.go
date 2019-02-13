@@ -9,9 +9,9 @@ import (
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
 )
 
-var deleteCmd = &cobra.Command{
-  Use:   "delete packageName [packageName ...]",
-  Short: "Delete Carbon packages from your Kubernetes cluster",
+var uninstallCmd = &cobra.Command{
+  Use:   "uninstall packageName [packageName ...]",
+  Short: "Uninstall Carbon packages from your Kubernetes cluster",
   Long: `
 `,
   SilenceErrors: true,
@@ -25,16 +25,16 @@ var deleteCmd = &cobra.Command{
     cmd.SilenceUsage = true
     var success bool = true
     for _, i := range args {
-      err := runDelete(i)
+      err := runUninstall(i)
       if err != nil {
         success = false
-        log.Errorf("Failed to delete package '%s' due to the error: %s", i, err.Error())
+        log.Errorf("Failed to uninstall package '%s' due to the error: %s", i, err.Error())
       }
     }
     if success {
-      log.Info("Carbon packages has been deleted successfully")  
+      log.Info("Carbon packages has been uninstalled successfully")  
     } else {
-      return errors.New("Carbon failed to delete some packages")
+      return errors.New("Carbon failed to uninstall some packages")
     }
 
     return nil
@@ -42,11 +42,11 @@ var deleteCmd = &cobra.Command{
 }
 
 func init() {
-  RootCmd.AddCommand(deleteCmd)
+  RootCmd.AddCommand(uninstallCmd)
 }
 
-func runDelete(pkg string) error {
-  log.Info("Deleting Carbon package", pkg)
+func runUninstall(pkg string) error {
+  log.Info("Uninstalling Carbon package", pkg)
 
   installed, err := kubemeta.IsInstalled(pkg)
   if err != nil {
@@ -63,15 +63,15 @@ func runDelete(pkg string) error {
 
   err = kubernetes.Delete(kmeta.Data.Manifest, kmeta.Data.Namespace)
   if err != nil {
-    return errors.Wrap(err, "deleting Kubernetes resources")
+    return errors.Wrap(err, "uninstalling Kubernetes resources")
   }
 
   err = kmeta.Delete()
   if err != nil {
-    log.Error("Failed to delete metadata for the package due to the error: ", err.Error())
-    return errors.Wrap(err, "deleting Carbon package metadata")
+    log.Error("Failed to uninstall metadata for the package due to the error: ", err.Error())
+    return errors.Wrap(err, "uninstalling Carbon package metadata")
   }
 
-  log.Debugf("Carbon package '%s' has been deleted", pkg)
+  log.Debugf("Carbon package '%s' has been uninstalled", pkg)
   return nil
 }

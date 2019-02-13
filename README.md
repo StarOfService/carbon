@@ -10,6 +10,9 @@ You are able to do with a Carbon package:
 
 Carbon packages are based on Docker images and don't impose any additional requirements or restrictions. Thus you may use your favorite Docker registry in order to store, share and install it to your Kubernetes cluster.
 
+If you want to try Carbon, please check this documentation page:
+[Get started with Carbon](docs/get_started.md)
+
 ## How Carbon works
 Carbon package is a Docker image with additional metadata stored at the image labels. The most important part of the metadata is a Kubernetes manifest templates, which are converted to Kubernetes manifests on the installation stage.
 
@@ -29,8 +32,9 @@ Usage of Docker labels allows us to avoid downloading the whole image for the in
 - [Installed package metadata](docs/installed_packages_metadata.md)
 - [Working with Minikube](docs/working_with_minikube.md)
 
-TODO: Fix links. and check other TODOs
-TODO: check english wording
+TODO: check other TODOs
+TODO: check trailing spaces, two and more consequent new lines, codestyle, line length
+TODO: double-check os.Exit, log.Fatal and fmt.*
 
 ## Limitations (TODO not finished)
 - All resources of a package will be deployed to the same namespace. If you need to deploy resources to different namespaces, we recommend splitting such package to different packages
@@ -41,3 +45,8 @@ TODO: check english wording
 - `carbon verify` - verify Carbon package configuration before running `carbon build`
 - `carbon config-upgrade` - upgrade a package config to the latest version
 - version constraints and dependencies - provide a possibility to define dependencies among Carbon packages and to install a package only when all version constraints are met
+
+## Contribution
+While Carbon is an important tool for our engineering department, it isn't a major business goal. Thus we're going to add the features matters for us.
+
+If you need any feature which isn't implemented yet, feel free to propose MR. In the extension of this tool, we count on the community.

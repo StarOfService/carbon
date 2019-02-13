@@ -50,7 +50,7 @@ func SetNamespace(cliNS string) error {
   }
 
   CurrentNamespace = ns
-  log.Debugf("Kubernetes namespace: ", CurrentNamespace)
+  log.Debug("Kubernetes namespace: ", CurrentNamespace)
   return nil
 }
 

@@ -30,7 +30,7 @@ When you use these variables at a Kubernetes manifest template, they must be pre
 
 At the installation stage, variables can be taken from different sources and are applied in the following order:
 1. Default values defined at the main config
-2. `~/carbon.vars` - variables file from a user home directory
+2. `~/.carbon/carbon.vars` - variables file from a user home directory
 3. Variables files provided by `--var-file` flag
 4. Variables provided by `--var` flag
 

@@ -64,13 +64,6 @@ func runBuild() error {
     BuildPush = false
   }
 
-  if minikube.Enabled {
-    err := minikube.SetDockerEnv()
-    if err != nil {
-      return errors.Wrap(err, "setting up Docker environment variables from Minikube")
-    }
-  }
-
   log.Info("Reading Carbon config")
   cfgPath, err := filepath.Abs(BuildConfig)
   if err != nil {

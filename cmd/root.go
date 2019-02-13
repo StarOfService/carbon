@@ -1,11 +1,10 @@
 package cmd
 
 import (
-  "os"
-
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
 
+  "github.com/starofservice/carbon/pkg/homecfg"
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/minikube"
 )
@@ -54,12 +53,19 @@ More details can be found here: https://github.com/StarOfService/carbon`,
       err := minikube.CheckStatus()
       if err != nil {
         log.Fatalf("Failed to verify Minikube status due to the error: %s", err)
-        os.Exit(1)
       }
       minikube.Enabled = true
+      if err := minikube.SetDockerEnv(); err != nil {
+        log.Fatalf("Failed to set up Docker environment variables for Minikube due to the error: %s", err)
+      }
     }
 
     kubernetes.SetNamespace(namespace)
+
+    err := homecfg.InitHomeConfig()
+    if err != nil {
+      log.Fatalf("Failed to initialize Carbon config directory at user home due to the error: %s", err)
+    }
   },
 }
 
