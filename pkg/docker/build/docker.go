@@ -63,7 +63,7 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
     name := im.Name()
 
     var tag string
-    if i == name {
+    if i == name || "docker.io/" + i == name {
       tag = self.RootConfig.Data.Version
     } else {
       tag = im.Tag()
