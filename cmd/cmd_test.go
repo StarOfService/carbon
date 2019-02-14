@@ -22,11 +22,11 @@ const (
 var lifecyclePkgFull = lifecyclePkgName + ":" + lifecyclePkgTag
 
 func TestMain(m *testing.M) {
-    log.Info("Starting Minikube")
-    err := test.MinikubeStart()
-    if err != nil {
-      log.Error("Failed to start Minikube due ot the error: ", err.Error())
-    }
+    // log.Info("Starting Minikube")
+    // err := test.MinikubeStart()
+    // if err != nil {
+    //   log.Error("Failed to start Minikube due ot the error: ", err.Error())
+    // }
 
     code := m.Run()
 
@@ -241,7 +241,7 @@ func TestLifecyclyDelete(t *testing.T) {
   os.Stdout, _ = os.Open(os.DevNull)
 
   carboncmd.RootCmd.SetArgs([]string{
-    "delete",
+    "uninstall",
     "-l", "fatal",
     "-m",
     lifecyclePkgName,

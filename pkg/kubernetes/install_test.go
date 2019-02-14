@@ -4,16 +4,16 @@ import (
   "testing"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
-  "github.com/starofservice/carbon/pkg/test"
+  // "github.com/starofservice/carbon/pkg/test"
 )
 
 func TestPurgeList(t *testing.T) {
-  t.Log("Starting Minikube")
-  err := test.MinikubeStart()
-  if err != nil {
-    t.Error("Failed to start Minikube due ot the error: ", err.Error())
-    return
-  }
+  // t.Log("Starting Minikube")
+  // err := test.MinikubeStart()
+  // if err != nil {
+  //   t.Error("Failed to start Minikube due ot the error: ", err.Error())
+  //   return
+  // }
 
   suite := map[string]bool{
     "rbac.authorization.k8s.io/v1/ClusterRole": false,

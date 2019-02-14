@@ -78,5 +78,4 @@ func init() {
   RootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Set the logging level ('trace'|'debug'|'info'|'warn'|'error'|'fatal') (default 'info')")
   RootCmd.PersistentFlags().BoolVarP(&rootMinikube, "minikube", "m", false, "Use the local Minikube instance instead of remote repositories and Kubernetes clusters. May be useful for local development process. Disabled by default.")
   RootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
-
 }

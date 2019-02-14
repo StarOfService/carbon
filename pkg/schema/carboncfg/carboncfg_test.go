@@ -12,17 +12,17 @@ import (
 
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/schema/carboncfg"
-  "github.com/starofservice/carbon/pkg/test"
+  // "github.com/starofservice/carbon/pkg/test"
 )
 
 func TestMain(m *testing.M) {
-    log.Info("Starting Minikube")
-    err := test.MinikubeStart()
-    if err != nil {
-      log.Error("Failed to start Minikube due ot the error: ", err.Error())
-    }
+    // log.Info("Starting Minikube")
+    // err := test.MinikubeStart()
+    // if err != nil {
+    //   log.Error("Failed to start Minikube due ot the error: ", err.Error())
+    // }
 
-    err = kubernetes.SetNamespace("")
+    err := kubernetes.SetNamespace("")
     if err != nil {
       log.Error("Failed to set current namespace due to the error ", err.Error())
       return
