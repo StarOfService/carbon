@@ -31,12 +31,12 @@
 
 [[constraint]]
   name = "github.com/docker/cli"
-  version = "v18.06.1-ce"
+  version = "v18.09.2"
 
 [[constraint]]
   name = "github.com/docker/docker"
   source = "https://github.com/docker/engine.git"
-  version = "v18.06.1-ce"
+  version = "v18.09.2"
 
 # required for github.com/docker/docker
 [[override]]

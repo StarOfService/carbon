@@ -232,7 +232,7 @@
   version = "v1.1.1"
 
 [[projects]]
-  digest = "1:11076d4e4ee83e2a9a53a482f35a22579cbc2354d21412bb87368f91a4e0a4af"
+  digest = "1:0dc6b5da1a067f7d9e56498cf18b5364d1db45f2c57b5ba3c3bad785a6688c88"
   name = "github.com/docker/cli"
   packages = [
     "cli/command/image/build",
@@ -242,8 +242,8 @@
     "opts",
   ]
   pruneopts = "NUT"
-  revision = "51668a30f26250ccfce31bcc13d9334eaafabe36"
-  version = "v18.09.0"
+  revision = "af2647d55b1dff69f5684f5991b9690fddd75c69"
+  version = "v18.09.2"
 
 [[projects]]
   digest = "1:ef5c663754b648a4121def310ad1ed50c1ab452442e195b8fe80aaa8cf1cd859"
@@ -266,7 +266,7 @@
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
 [[projects]]
-  digest = "1:14051a8e319e6ce1ca7f61b9a2e25c722aa2f45bdd37e6297ac208965cb91bbe"
+  digest = "1:6c04a1ba1c68614fe210a0e804657ce913938fa7fccf13ffa6dc59e49ce3793b"
   name = "github.com/docker/docker"
   packages = [
     "api",
@@ -311,9 +311,9 @@
     "registry/resumable",
   ]
   pruneopts = "NUT"
-  revision = "f5749085e9cb0565afe342e73a67631f97547054"
+  revision = "eb137ff1765faeb29c2d99025bfd8ed41836dd06"
   source = "https://github.com/docker/engine.git"
-  version = "v18.09.0"
+  version = "v18.09.2"
 
 [[projects]]
   digest = "1:8866486038791fe65ea1abf660041423954b1f3fb99ea6a0ad8424422e943458"
