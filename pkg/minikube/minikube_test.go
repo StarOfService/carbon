@@ -9,6 +9,8 @@ import (
   "github.com/starofservice/carbon/pkg/test"
 )
 
+const minikubeDriverVar = "CARBON_TEST_MINIKUBE_NONE_DRIVER"
+
 var dockerEnv = []string{
   "DOCKER_TLS_VERIFY",
   "DOCKER_HOST",
@@ -29,17 +31,21 @@ func TestMinikubeRunning(t *testing.T) {
     return
   }
 
-  err = minikube.SetDockerEnv()
-  if err != nil {
-    t.Errorf("Failed to set Docker environment variables. Got the error: %s", err.Error())
-    return
-  }
-  defer minikube.UnsetDockerEnv()
+  // 'none' driver does not support 'minikube docker-env' command
+  md := os.Getenv(minikubeDriverVar)
+  if len(md) == 0 {
+    err = minikube.SetDockerEnv()
+    if err != nil {
+      t.Errorf("Failed to set Docker environment variables. Got the error: %s", err.Error())
+      return
+    }
+    defer minikube.UnsetDockerEnv()
 
-  for _, i := range dockerEnv {
-    v := os.Getenv(i)
-    if len(v) == 0 {
-      t.Errorf("Docker environment variable '%s' is undefined", i)
+    for _, i := range dockerEnv {
+      v := os.Getenv(i)
+      if len(v) == 0 {
+        t.Errorf("Docker environment variable '%s' is undefined", i)
+      }
     }
   }
 }
