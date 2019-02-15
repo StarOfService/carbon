@@ -71,6 +71,11 @@
   name = "github.com/opencontainers/selinux"
   revision = "077c8b6d1c18456fb7c792bc0de52295a0d1900e"
 
+[[override]]
+  name = "github.com/Nvveen/Gotty"
+  source = "https://github.com/ijc25/Gotty"
+  revision = "a8b993ba6abdb0e0c12b0125c603323a71c7790c"
+
 ########## Kubernetes ##########
 
 #[[constraint]]

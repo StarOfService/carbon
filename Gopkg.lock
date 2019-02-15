@@ -73,12 +73,12 @@
   version = "v0.8.3"
 
 [[projects]]
-  branch = "master"
-  digest = "1:7da1a26e347165227c79dfb10b90b3b5dedb6cbae50e88cdb81f5b6259b5b951"
+  digest = "1:1b532462adeb680f8526152d0bc1baa203ce6b63b13070b9f9bd5812ef74dfce"
   name = "github.com/Nvveen/Gotty"
   packages = ["."]
   pruneopts = "NUT"
-  revision = "cd527374f1e5bff4938207604a14f2e38a9cf512"
+  revision = "a8b993ba6abdb0e0c12b0125c603323a71c7790c"
+  source = "https://github.com/ijc25/Gotty"
 
 [[projects]]
   digest = "1:d8ebbd207f3d3266d4423ce4860c9f3794956306ded6c7ba312ecc69cdfbf04c"
