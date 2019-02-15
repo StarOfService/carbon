@@ -4,6 +4,7 @@ import (
   "io/ioutil"
   "path/filepath"
 
+  "github.com/docker/cli/opts"
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
   "github.com/spf13/cobra"
@@ -21,6 +22,11 @@ var BuildRemove bool
 var BuildTags []string
 var BuildTagPrefix string
 var BuildTagSuffix string
+
+// https://github.com/docker/cli/blob/v18.06.2-ce/cli/command/image/build.go#L41-L75
+var BuildDockerBuildArg opts.ListOpts
+var BuildDockerLabel opts.ListOpts
+var BuildDockerNetwork string
 
 var buildCmd = &cobra.Command{
   Use:   "build",
@@ -41,6 +47,9 @@ Builds a Carbon package based on the provided carbon.yaml config.`,
 }
 
 func init() {
+  BuildDockerBuildArg = opts.NewListOpts(opts.ValidateEnv)
+  BuildDockerLabel = opts.NewListOpts(opts.ValidateEnv)
+
   RootCmd.AddCommand(buildCmd)
 
   buildCmd.Flags().StringVarP(&BuildConfig, "config", "c", "carbon.yaml", "config file (default is carbon.yaml)")
@@ -49,6 +58,10 @@ func init() {
   buildCmd.Flags().StringArrayVar(&BuildTags, "tag", []string{}, "Name and optionally a tag in the 'name:tag' format. If tag isn't provided, it will be replaced by the component version from carbon.yaml")
   buildCmd.Flags().StringVar(&BuildTagPrefix, "tag-prefix", "", "Prefix which should be added for all tags")
   buildCmd.Flags().StringVar(&BuildTagSuffix, "tag-suffix", "", "Suffix which should be added for all tags")
+
+  buildCmd.Flags().Var(&BuildDockerBuildArg, "docker-build-arg", "Set build-time variables")
+  buildCmd.Flags().Var(&BuildDockerLabel, "docker-label", "Set metadata for an image")
+  buildCmd.Flags().StringVar(&BuildDockerNetwork, "docker-network", "default", "Set the networking mode for the RUN instructions during build (default 'default')")
 }
 
 func runBuild() error {
@@ -118,7 +131,13 @@ func runBuild() error {
     return errors.Wrap(err, "extending tags")
   }
 
-  if err = dockerBuild.Build(metaMap); err != nil {
+  dockerBuild.DockerBuildArgs = opts.ConvertKVStringsToMapWithNil(BuildDockerBuildArg.GetAll())
+  dockerBuild.DockerNetworkMode = BuildDockerNetwork
+
+  dockerBuild.DockerLabels = opts.ConvertKVStringsToMap(BuildDockerLabel.GetAll())
+  dockerBuild.AddCarbonMetadata(metaMap)
+
+  if err = dockerBuild.Build(); err != nil {
     return errors.Wrap(err, "building Carbon package")
   }
 

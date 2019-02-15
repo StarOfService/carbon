@@ -7,21 +7,13 @@ import (
   "encoding/json"
   "io"
   "os"
-  // "strconv"
   "strings"
 
-  // "github.com/containerd/containerd"
-
-  // "github.com/docker/cli/cli/command"
-  // "github.com/docker/cli/cli/command/image"
-  // clitypes "github.com/docker/cli/types"
-
+  "github.com/docker/docker/api/types"
   clibuild "github.com/docker/cli/cli/command/image/build"
+  "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/archive"
   "github.com/docker/docker/pkg/idtools"
-
-  "github.com/docker/docker/api/types"
-  "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/jsonmessage"
   "github.com/docker/docker/pkg/term"
   "github.com/pkg/errors"
@@ -31,13 +23,15 @@ import (
   "github.com/starofservice/carbon/pkg/schema/pkgcfg"
 )
 
-// const containerdSockPath = "/run/containerd/containerd.sock"
-
 type Options struct {
   Client *client.Client
   ContextPath string
   RootConfig *pkgcfg.CarbonConfig
-  Tags []string
+  DockerTags []string
+
+  DockerBuildArgs map[string]*string
+  DockerLabels map[string]string
+  DockerNetworkMode string
 }
 
 func NewOptions(cfg *pkgcfg.CarbonConfig, ctxPath string) (*Options, error) {
@@ -83,13 +77,22 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
     if fullTag != "latest" {
       fullTag = joinTag(name, (prefix + tag + suffix))
     }
-    self.Tags = append(self.Tags, fullTag)
+    self.DockerTags = append(self.DockerTags, fullTag)
   }
   return nil
 }
 
+func (self *Options) AddCarbonMetadata(meta map[string]string) {
+  for k, v := range meta {
+    if _, ok := self.DockerLabels[k]; ok {
+      log.Warnf("Label '%s' is reserved by Carbon and can't be used", k)
+    }
+    self.DockerLabels[k] = v
+  }
+}
+
 // https://github.com/docker/cli/blob/master/cli/command/image/build.go#L40-L76
-func (self *Options) Build(metadata map[string]string) error {
+func (self *Options) Build() error {
   log.Debug("Building Docker image")
 
   excludes, err := clibuild.ReadDockerignore(self.ContextPath)
@@ -109,14 +112,16 @@ func (self *Options) Build(metadata map[string]string) error {
 
   // https://github.com/docker/engine/blob/v18.09.0/api/types/client.go#L143-L190
   opt := types.ImageBuildOptions{
+    BuildArgs:   self.DockerBuildArgs,
     Context:     ctx,
     Dockerfile:  self.RootConfig.Data.Dockerfile,
     ForceRemove: true,
-    Labels:      metadata,
+    Labels:      self.DockerLabels,
+    NetworkMode: self.DockerNetworkMode,
     NoCache:     true,
     PullParent:  true,
     Remove:      true,
-    Tags:        self.Tags,
+    Tags:        self.DockerTags,
   }
 
   response, err := self.Client.ImageBuild(context.Background(), ctx, opt)
@@ -130,56 +135,8 @@ func (self *Options) Build(metadata map[string]string) error {
   return nil
 }
 
-// func (self *Options) Build(metadata map[string]string) error {
-
-//   stdin, stdout, stderr := term.StdStreams()
-//   dockerCli := command.NewDockerCli(stdin, stdout, stderr, contentTrustEnabled()) //, newContainerizedClient)
-
-//   cmd := image.NewBuildCommand(dockerCli)
-//   cmd.Flags().Set("file", self.RootConfig.Data.Dockerfile)
-//   cmd.Flags().Set("force-rm", "true")
-//   cmd.Flags().Set("no-cache", "true")
-//   // cmd.Flags().Set("pull", "true") // TODO: do we really need this?
-//   cmd.Flags().Set("rm", "true")
-//   cmd.SetArgs([]string{"."})
-
-//   for k, v := range metadata {
-//     cmd.Flags().Set("label", k + "=" + v) 
-//   }
-   
-//   for _, i := range self.Tags {
-//     cmd.Flags().Set("tag", i) 
-//   }
-
-//   err := cmd.Execute()
-
-//   if err != nil {
-//     return errors.Wrap(err, "building docker image")
-//   }
-
-
-  
-//   // cmd.SetOutput(ioutil.Discard)
-//   // err := cmd.Execute()
-//   return nil
-
-// }
-
-// func newContainerizedClient(sockPath string) (clitypes.ContainerizedClient, error) {
-//   if sockPath == "" {
-//     sockPath = containerdSockPath
-//   }
-//   cclient, err := containerd.New(sockPath)
-//   if err != nil {
-//     return nil, err
-//   }
-//   return &baseClient{
-//     cclient: cclient,
-//   }, nil
-// }
-
 func (self *Options) Push() error {
-  for _, i := range self.Tags {
+  for _, i := range self.DockerTags {
     meta, err := dockermeta.NewDockerMeta(i)
     if err != nil {
       return err
@@ -212,7 +169,7 @@ func (self *Options) Push() error {
 }
 
 func (self *Options) Remove() error {
-  for _, i := range self.Tags {
+  for _, i := range self.DockerTags {
 
     opt := types.ImageRemoveOptions{
       // Force: true,
@@ -259,14 +216,3 @@ func displayJSONMsg(in io.Reader) {
   termFd, isTerm := term.GetFdInfo(out)
   jsonmessage.DisplayJSONMessagesStream(in, out, termFd, isTerm, nil)
 }
-
-// // https://github.com/docker/cli/blob/v18.09.2/cmd/docker/docker.go#L197-L205
-// func contentTrustEnabled() bool {
-//   if e := os.Getenv("DOCKER_CONTENT_TRUST"); e != "" {
-//     if t, err := strconv.ParseBool(e); t || err != nil {
-//       // treat any other value as true
-//       return true
-//     }
-//   }
-//   return false
-// }
