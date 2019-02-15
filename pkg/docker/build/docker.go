@@ -7,13 +7,21 @@ import (
   "encoding/json"
   "io"
   "os"
+  // "strconv"
   "strings"
 
-  "github.com/docker/docker/api/types"
+  // "github.com/containerd/containerd"
+
+  // "github.com/docker/cli/cli/command"
+  // "github.com/docker/cli/cli/command/image"
+  // clitypes "github.com/docker/cli/types"
+
   clibuild "github.com/docker/cli/cli/command/image/build"
-  "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/archive"
   "github.com/docker/docker/pkg/idtools"
+
+  "github.com/docker/docker/api/types"
+  "github.com/docker/docker/client"
   "github.com/docker/docker/pkg/jsonmessage"
   "github.com/docker/docker/pkg/term"
   "github.com/pkg/errors"
@@ -22,6 +30,8 @@ import (
   dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
   "github.com/starofservice/carbon/pkg/schema/pkgcfg"
 )
+
+// const containerdSockPath = "/run/containerd/containerd.sock"
 
 type Options struct {
   Client *client.Client
@@ -91,7 +101,7 @@ func (self *Options) Build(metadata map[string]string) error {
 
   ctx, err := archive.TarWithOptions(self.ContextPath, &archive.TarOptions{
     ExcludePatterns: excludes,
-    ChownOpts:       &idtools.Identity{UID: 0, GID: 0},
+    ChownOpts:       &idtools.IDPair{UID: 0, GID: 0},
   })
   if err != nil {
     return errors.Wrap(err, "creating Docker build context")
@@ -119,6 +129,54 @@ func (self *Options) Build(metadata map[string]string) error {
 
   return nil
 }
+
+// func (self *Options) Build(metadata map[string]string) error {
+
+//   stdin, stdout, stderr := term.StdStreams()
+//   dockerCli := command.NewDockerCli(stdin, stdout, stderr, contentTrustEnabled()) //, newContainerizedClient)
+
+//   cmd := image.NewBuildCommand(dockerCli)
+//   cmd.Flags().Set("file", self.RootConfig.Data.Dockerfile)
+//   cmd.Flags().Set("force-rm", "true")
+//   cmd.Flags().Set("no-cache", "true")
+//   // cmd.Flags().Set("pull", "true") // TODO: do we really need this?
+//   cmd.Flags().Set("rm", "true")
+//   cmd.SetArgs([]string{"."})
+
+//   for k, v := range metadata {
+//     cmd.Flags().Set("label", k + "=" + v) 
+//   }
+   
+//   for _, i := range self.Tags {
+//     cmd.Flags().Set("tag", i) 
+//   }
+
+//   err := cmd.Execute()
+
+//   if err != nil {
+//     return errors.Wrap(err, "building docker image")
+//   }
+
+
+  
+//   // cmd.SetOutput(ioutil.Discard)
+//   // err := cmd.Execute()
+//   return nil
+
+// }
+
+// func newContainerizedClient(sockPath string) (clitypes.ContainerizedClient, error) {
+//   if sockPath == "" {
+//     sockPath = containerdSockPath
+//   }
+//   cclient, err := containerd.New(sockPath)
+//   if err != nil {
+//     return nil, err
+//   }
+//   return &baseClient{
+//     cclient: cclient,
+//   }, nil
+// }
 
 func (self *Options) Push() error {
   for _, i := range self.Tags {
@@ -201,3 +259,14 @@ func displayJSONMsg(in io.Reader) {
   termFd, isTerm := term.GetFdInfo(out)
   jsonmessage.DisplayJSONMessagesStream(in, out, termFd, isTerm, nil)
 }
+
+// // https://github.com/docker/cli/blob/v18.09.2/cmd/docker/docker.go#L197-L205
+// func contentTrustEnabled() bool {
+//   if e := os.Getenv("DOCKER_CONTENT_TRUST"); e != "" {
+//     if t, err := strconv.ParseBool(e); t || err != nil {
+//       // treat any other value as true
+//       return true
+//     }
+//   }
+//   return false
+// }

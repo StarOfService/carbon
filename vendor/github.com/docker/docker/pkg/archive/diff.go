@@ -33,7 +33,7 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 	if options.ExcludePatterns == nil {
 		options.ExcludePatterns = []string{}
 	}
-	idMapping := idtools.NewIDMappingsFromMaps(options.UIDMaps, options.GIDMaps)
+	idMappings := idtools.NewIDMappingsFromMaps(options.UIDMaps, options.GIDMaps)
 
 	aufsTempdir := ""
 	aufsHardlinks := make(map[string]*tar.Header)
@@ -192,7 +192,7 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 				srcData = tmpFile
 			}
 
-			if err := remapIDs(idMapping, srcHdr); err != nil {
+			if err := remapIDs(idMappings, srcHdr); err != nil {
 				return 0, err
 			}
 

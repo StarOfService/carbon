@@ -29,31 +29,49 @@
   go-tests = true
   unused-packages = true
 
-[[constraint]]
-  name = "github.com/docker/cli"
-  version = "v18.09.2"
+########## Docker ##########
 
-[[constraint]]
+[[override]]
+  name = "github.com/docker/cli"
+  version = "=v18.06.2-ce"
+
+[[override]]
   name = "github.com/docker/docker"
   source = "https://github.com/docker/engine.git"
-  version = "v18.09.2"
+  version = "=v18.06.2-ce"
 
 # required for github.com/docker/docker
 [[override]]
   name = "github.com/docker/distribution"
   revision = "83389a148052d74ac602f5f1d62f86ff2f3c4aa5"
 
+# required for github.com/docker/cli
+[[override]]
+  name = "github.com/moby/buildkit"
+  revision = "98f1604134f945d48538ffca0e18662337b4a850"
+
+## required for github.com/docker/docker
+#[[override]]
+#  name = "github.com/containerd/containerd"
+#  version = "=v1.2.2"
+#  #revision = "9754871865f7fe2f4e74d43e2fc7ccd237edcbce"
+
+# Required for github.com/docker/licensing
+[[override]]
+  name = "github.com/dgrijalva/jwt-go"
+  version = "=v2.6.0"
+  #revision = "05914d821849570fba9eacfb29466f2d8d3cd229"
+
+# required for github.com/docker/cli
+[[override]]
+  name = "github.com/tonistiigi/fsutil"
+  revision = "8abad97ee3969cdf5e9c367f46adba2c212b3ddb"
+
 [[override]]
   name = "github.com/opencontainers/selinux"
   revision = "077c8b6d1c18456fb7c792bc0de52295a0d1900e"
 
-[[constraint]]
-  name = "github.com/spf13/cobra"
-  version = "0.0.3"
-
-[[constraint]]
-  name = "gopkg.in/yaml.v2"
-  version = "2.2.1"
+########## Kubernetes ##########
 
 #[[constraint]]
 #  name = "k8s.io/minikube"
@@ -87,3 +105,13 @@
 [[override]]
   name = "github.com/russross/blackfriday"
   version = "~v1.5.2"
+
+########## Other ##########
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  version = "0.0.3"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.1"
