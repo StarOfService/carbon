@@ -1,2 +1,5 @@
 carbon
+carbon-darwin-amd64
+carbon-windows-amd64.exe
+carbon-linux-amd64
 coverprofile.out

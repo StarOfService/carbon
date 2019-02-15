@@ -34,8 +34,7 @@ Usage of Docker labels allows us to avoid downloading the whole image for the in
 - [Working with Minikube](docs/working_with_minikube.md)
 
 TODO: check other TODOs
-TODO: check trailing spaces, two and more consequent new lines, codestyle, line length
-TODO: double-check os.Exit, log.Fatal and fmt.*
+TODO: codestyle, line length
 
 ## Limitations (TODO not finished)
 - All resources of a package will be deployed to the same namespace. If you need to deploy resources to different namespaces, we recommend splitting such package to different packages
