@@ -33,7 +33,7 @@ Usage of Docker labels allows us to avoid downloading the whole image for the in
 - [Installed package metadata](docs/installed_packages_metadata.md)
 - [Working with Minikube](docs/working_with_minikube.md)
 
-TODO: codestyle, line length
+TODO: codestyle, line length 
 
 ## Limitations
 * All resources of a package will be deployed to the same Kuberenetes namespace. If you need to deploy resources to different namespaces, we recommend splitting such package to different packages
