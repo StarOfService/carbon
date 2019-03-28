@@ -21,7 +21,7 @@ coverprofile: minikube
 build:
 	go build -o carbon
 
-build-all-os:
-	env GOOS=windows GOARCH=amd64 go build -o carbon-windows-amd64.exe
-	env GOOS=linux GOARCH=amd64 go build -o carbon-linux-amd64
-	env GOOS=darwin GOARCH=amd64 go build -o carbon-darwin-amd64
+build-release:
+	env GOOS=windows GOARCH=amd64 go build -o carbon-windows-amd64.exe -ldflags "-X main.VERSION=${TRAVIS_TAG}"
+	env GOOS=linux GOARCH=amd64 go build -o carbon-linux-amd64 -ldflags "-X main.VERSION=${TRAVIS_TAG}"
+	env GOOS=darwin GOARCH=amd64 go build -o carbon-darwin-amd64 -ldflags "-X main.VERSION=${TRAVIS_TAG}"

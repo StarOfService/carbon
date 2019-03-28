@@ -73,10 +73,12 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
       tag = im.Tag()
     }
 
-    fullTag := tag
-    if fullTag != "latest" {
-      fullTag = joinTag(name, (prefix + tag + suffix))
+    psTag := tag
+    if psTag != "latest" {
+      psTag = prefix + tag + suffix
     }
+
+    fullTag := joinTag(name, psTag)
     self.DockerTags = append(self.DockerTags, fullTag)
   }
   return nil
