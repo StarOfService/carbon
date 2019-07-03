@@ -120,7 +120,7 @@ func (self *Options) Build() error {
     ForceRemove: true,
     Labels:      self.DockerLabels,
     NetworkMode: self.DockerNetworkMode,
-    NoCache:     true,
+    NoCache:     false,
     PullParent:  true,
     Remove:      true,
     Tags:        self.DockerTags,
