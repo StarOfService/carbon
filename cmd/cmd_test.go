@@ -60,8 +60,8 @@ func TestBuildAndPush(t *testing.T) {
     "-l", "fatal",
     "-c", "../test/carbon.yaml",
     "--tag", test.DockerMockRepo+"/carbon-test",
-    "--tag-prefix", "pref-",
-    "--tag-suffix", "-suf",
+    "--version-prefix", "pref-",
+    "--version-suffix", "-suf",
     "--push",
     "--rm",
   })
@@ -84,8 +84,8 @@ func TestLifecyclyBuild(t *testing.T) {
     "-m",
     "-c", "../test/carbon.yaml",
     "--tag", lifecyclePkgFull,
-    "--tag-prefix", "",
-    "--tag-suffix", "",
+    "--version-prefix", "",
+    "--version-suffix", "",
     "--push=false",
     "--rm=false",
   })

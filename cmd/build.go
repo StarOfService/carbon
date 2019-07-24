@@ -20,8 +20,8 @@ var BuildConfig string
 var BuildPush bool
 var BuildRemove bool
 var BuildTags []string
-var BuildTagPrefix string
-var BuildTagSuffix string
+var BuildVersionPrefix string
+var BuildVersionSuffix string
 
 // https://github.com/docker/cli/blob/v18.06.2-ce/cli/command/image/build.go#L41-L75
 var BuildDockerBuildArg opts.ListOpts
@@ -56,8 +56,8 @@ func init() {
   buildCmd.Flags().BoolVar(&BuildPush, "push", false, "Push built images to the repositories (disabled by default)")
   buildCmd.Flags().BoolVar(&BuildRemove, "rm", false, "Remove build images after the push operation (disabled by default)")
   buildCmd.Flags().StringArrayVar(&BuildTags, "tag", []string{}, "Name and optionally a tag in the 'name:tag' format. If tag isn't provided, it will be replaced by the component version from carbon.yaml")
-  buildCmd.Flags().StringVar(&BuildTagPrefix, "tag-prefix", "", "Prefix which should be added for all tags")
-  buildCmd.Flags().StringVar(&BuildTagSuffix, "tag-suffix", "", "Suffix which should be added for all tags")
+  buildCmd.Flags().StringVar(&BuildVersionPrefix, "version-prefix", "", "Prefix which should be added for all tags and Carbon package version")
+  buildCmd.Flags().StringVar(&BuildVersionSuffix, "version-suffix", "", "Suffix which should be added for all tags and Carbon package version")
 
   buildCmd.Flags().Var(&BuildDockerBuildArg, "docker-build-arg", "Set build-time variables")
   buildCmd.Flags().Var(&BuildDockerLabel, "docker-label", "Set metadata for an image")
@@ -88,7 +88,7 @@ func runBuild() error {
     return errors.Wrap(err, "reading Carbon config")
   }
 
-  cfg, err := pkgcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody)
+  cfg, err := pkgcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody, BuildVersionPrefix, BuildVersionSuffix)
   if err != nil {
     return errors.Wrap(err, "parsing Carbon config")
   }
@@ -127,7 +127,7 @@ func runBuild() error {
     return errors.Wrap(err, "creating Docker build handler")
   }
   
-  if err = dockerBuild.ExtendTags(BuildTags, BuildTagPrefix, BuildTagSuffix); err != nil {
+  if err = dockerBuild.ExtendTags(BuildTags, BuildVersionPrefix, BuildVersionSuffix); err != nil {
     return errors.Wrap(err, "extending tags")
   }
 

@@ -51,12 +51,14 @@ func NewOptions(cfg *pkgcfg.CarbonConfig, ctxPath string) (*Options, error) {
 
 func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) error {
   var selectTags []string
+  tagFromVersion := false
   if len(cliTags) > 0 {
     selectTags = cliTags
   } else if len(self.RootConfig.Data.Artifacts) > 0 {
     selectTags = self.RootConfig.Data.Artifacts
   } else {
     selectTags = append(selectTags, joinTag(self.RootConfig.Data.Name, self.RootConfig.Data.Version))
+    tagFromVersion = true
   }
 
   for _, i := range selectTags {
@@ -74,13 +76,14 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
     }
 
     psTag := tag
-    if psTag != "latest" {
+    if psTag != "latest" && !tagFromVersion {
       psTag = prefix + tag + suffix
     }
 
     fullTag := joinTag(name, psTag)
     self.DockerTags = append(self.DockerTags, fullTag)
   }
+
   return nil
 }
 

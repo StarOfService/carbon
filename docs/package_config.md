@@ -7,7 +7,7 @@ Parameter     | Required | Default value  | Description
 --------------|----------|----------------|------------
 apiVersion    | true     |                | version of the config format. The latest version is `v1alpha1`
 name          | true     |                | name of the Carbon package
-version       | true     |                | version of the Carbon package
+version       | true     |                | version of the Carbon package. Can be extended by `--version-prefix` and `--version-suffix` parrameters on a buid stage
 kubeManifests | true     |                | path to Kubernetes manifest templates. Current parameter may contain wildcard, for example `./k8s/*.yaml`.
 dockerfile    | false    | Dockerfile     | path to a Dockerfile which will be used for building a Docker image with your application
 artifacts     | false    | _name:version_ | list of Docker tags to be assigned for the built image. This list may contain a full tag like `carbontest:latest` or just a name without a tag suffix. When a tag suffix isn't provided, the package version will be used as a suffix. Thus if `version` is set to `0.1.0` and artifacts have item `carbontest`, the image will get a tag `carbontest:0.1.0`

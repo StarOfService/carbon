@@ -6,7 +6,7 @@ You have several options to define a Docker image name and tag:
 
 When you define a name without a tag, a Carbon package version will be used as a tag.
 
-`carbon build` command has additional flags `--tag-prefix` and `--tag-suffix`. When any of this flag is used, all Docker image tags will be prefixed/suffixed by the provided strings. Here's one exception: prefix and suffix are not applied for the `latest` tag.
+`carbon build` command has additional flags `--version-prefix` and `--version-suffix`. When any of this flag is used, all Docker image tags will be prefixed/suffixed by the provided strings. Here's one exception: prefix and suffix are not applied for the `latest` tag. Besides Docker tags, defined prefix and suffix will be also added to a Carbon package version defined at `carbon.yaml` file.
 
 Let's consider an example. We have a Carbon package with version `0.1.0` and run the command:
 ```
@@ -17,8 +17,8 @@ $ carbon build \
   --tag region2.registry.example.com/carbontest \
   --tag region2.registry.example.com/carbontest:foo \
   --tag region2.registry.example.com/carbontest:latest \
-  --tag-prefix "hotfix-" \
-  --taf-suffix "-alpha"
+  --version-prefix "hotfix-" \
+  --version-suffix "-alpha"
 ```
 
 This command will create a Docker image with such tags:
