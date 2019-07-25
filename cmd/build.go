@@ -3,6 +3,7 @@ package cmd
 import (
   "io/ioutil"
   "path/filepath"
+  "strings"
 
   "github.com/docker/cli/opts"
   "github.com/pkg/errors"
@@ -56,8 +57,8 @@ func init() {
   buildCmd.Flags().BoolVar(&BuildPush, "push", false, "Push built images to the repositories (disabled by default)")
   buildCmd.Flags().BoolVar(&BuildRemove, "rm", false, "Remove build images after the push operation (disabled by default)")
   buildCmd.Flags().StringArrayVar(&BuildTags, "tag", []string{}, "Name and optionally a tag in the 'name:tag' format. If tag isn't provided, it will be replaced by the component version from carbon.yaml")
-  buildCmd.Flags().StringVar(&BuildVersionPrefix, "version-prefix", "", "Prefix which should be added for all tags and Carbon package version")
-  buildCmd.Flags().StringVar(&BuildVersionSuffix, "version-suffix", "", "Suffix which should be added for all tags and Carbon package version")
+  buildCmd.Flags().StringVar(&BuildVersionPrefix, "version-prefix", "", "Prefix which should be added for Carbon package version")
+  buildCmd.Flags().StringVar(&BuildVersionSuffix, "version-suffix", "", "Suffix which should be added for Carbon package version")
 
   buildCmd.Flags().Var(&BuildDockerBuildArg, "docker-build-arg", "Set build-time variables")
   buildCmd.Flags().Var(&BuildDockerLabel, "docker-label", "Set metadata for an image")
@@ -75,6 +76,10 @@ func runBuild() error {
   if minikube.Enabled && BuildPush {
     log.Warn("Push can't be used with Minikube mode. Skipping it.")
     BuildPush = false
+  }
+
+  if strings.HasPrefix(BuildVersionPrefix, "-") || strings.HasPrefix(BuildVersionPrefix, "_") {
+    return errors.New("Version prefix can't be started with a period or a dash")
   }
 
   log.Info("Reading Carbon config")
@@ -127,8 +132,8 @@ func runBuild() error {
     return errors.Wrap(err, "creating Docker build handler")
   }
   
-  if err = dockerBuild.ExtendTags(BuildTags, BuildVersionPrefix, BuildVersionSuffix); err != nil {
-    return errors.Wrap(err, "extending tags")
+  if err = dockerBuild.ProcessTags(BuildTags); err != nil {
+    return errors.Wrap(err, "processing tags")
   }
 
   dockerBuild.DockerBuildArgs = opts.ConvertKVStringsToMapWithNil(BuildDockerBuildArg.GetAll())

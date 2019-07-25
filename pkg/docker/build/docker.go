@@ -49,16 +49,14 @@ func NewOptions(cfg *pkgcfg.CarbonConfig, ctxPath string) (*Options, error) {
   return resp, nil
 }
 
-func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) error {
+func (self *Options) ProcessTags(cliTags []string) error {
   var selectTags []string
-  tagFromVersion := false
   if len(cliTags) > 0 {
     selectTags = cliTags
   } else if len(self.RootConfig.Data.Artifacts) > 0 {
     selectTags = self.RootConfig.Data.Artifacts
   } else {
     selectTags = append(selectTags, joinTag(self.RootConfig.Data.Name, self.RootConfig.Data.Version))
-    tagFromVersion = true
   }
 
   for _, i := range selectTags {
@@ -69,18 +67,13 @@ func (self *Options) ExtendTags(cliTags []string, prefix string, suffix string) 
     name := im.Name()
 
     var tag string
-    if i == name || "docker.io/" + i == name {
+    if i == name || "docker.io/library/" + i == name {
       tag = self.RootConfig.Data.Version
     } else {
       tag = im.Tag()
     }
 
-    psTag := tag
-    if psTag != "latest" && !tagFromVersion {
-      psTag = prefix + tag + suffix
-    }
-
-    fullTag := joinTag(name, psTag)
+    fullTag := joinTag(name, tag)
     self.DockerTags = append(self.DockerTags, fullTag)
   }
 
