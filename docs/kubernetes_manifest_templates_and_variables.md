@@ -18,6 +18,7 @@ It's up to you how to use these properties, but here we want to give some recomm
 
 ### User-defined variables
 All user-defined variables must be defined at `variables` section of the main config. Each variable may have such parameters:
+
 Parameter     | Required | Default | Description
 --------------|----------|---------|------------
 `name`        | true     | -       | variable name
