@@ -135,9 +135,7 @@ func (self *Options) Build() error {
   }
   defer response.Body.Close()
 
-  displayJSONMsg(response.Body)
-
-  return nil
+  return displayJSONMsg(response.Body)
 }
 
 func (self *Options) Push() error {
@@ -210,7 +208,7 @@ func suppressOutput() bool {
   return false
 }
 
-func displayJSONMsg(in io.Reader) {
+func displayJSONMsg(in io.Reader) error {
   var out io.Writer
   if suppressOutput() {
     out = &bytes.Buffer{}
@@ -219,5 +217,5 @@ func displayJSONMsg(in io.Reader) {
   }
 
   termFd, isTerm := term.GetFdInfo(out)
-  jsonmessage.DisplayJSONMessagesStream(in, out, termFd, isTerm, nil)
+  return jsonmessage.DisplayJSONMessagesStream(in, out, termFd, isTerm, nil)
 }
