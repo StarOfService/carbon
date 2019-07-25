@@ -46,7 +46,7 @@ func init() {
 }
 
 func runUninstall(pkg string) error {
-  log.Info("Uninstalling Carbon package", pkg)
+  log.Info("Uninstalling Carbon package ", pkg)
 
   installed, err := kubemeta.IsInstalled(pkg)
   if err != nil {
