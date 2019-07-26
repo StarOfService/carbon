@@ -120,9 +120,12 @@ func (self *KubeInstall) Apply(defPWL bool) error {
 
   log.Trace("Final Kubernetes manifests for being applied: ", string(self.BuiltManifest))
 
-  fake := fakeio.Stdin(string(self.BuiltManifest))
+  fake := fakeio.StdinBytes([]byte{})
   defer fake.Restore()
-  fake.CloseStdin()
+  go func() {
+    fake.StdinBytes(self.BuiltManifest)
+    fake.CloseStdin()
+  }()
 
   err = o.Run()
   if err != nil {

@@ -24,9 +24,12 @@ func Delete(manifest, ns string) error {
 
   log.Trace("Kubernetes manifests for being deleted: ", manifest)
 
-  fake := fakeio.Stdin(manifest)
+  fake := fakeio.StdinBytes([]byte{})
   defer fake.Restore()
-  fake.CloseStdin()
+  go func() {
+    fake.Stdin(manifest)
+    fake.CloseStdin()
+  }()
 
   err = o.RunDelete()
   if err != nil {
