@@ -14,6 +14,7 @@ import (
   _ "k8s.io/client-go/plugin/pkg/client/auth/oidc"
   cmdapply "k8s.io/kubernetes/pkg/kubectl/cmd/apply"
 
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
   "github.com/starofservice/carbon/pkg/util/tojson"
 )
 
@@ -25,7 +26,7 @@ func (self *KubeInstall) UpdateVars(vars map[string]string) {
     if _, ok := self.Variables.Var[k]; ok {
       self.Variables.Var[k] = v
     } else {
-      log.Warnf("Variable '%s' is not supported by the current package", k)
+      log.Debugf("Variable '%s' is defined, but it isn't supported by the current package", k)
     }
   }
 }
@@ -52,19 +53,15 @@ func (self *KubeInstall) Build() error {
   return nil
 }
 
-func (self *KubeInstall) SetAppLabel() error {
+func (self *KubeInstall) SetAppLabels() error {
   log.Debug("Applying Carbon lables for Kubernetes manifests")
-  ops := fmt.Sprintf(`---
-filters:
-  kind: .*
-type: merge
-patch:
-  metadata:
-    labels:
-      managed-by: carbon
-      carbon/component-name: %s
-      carbon/component-version: %s
-`, self.Variables.Pkg.Name, self.Variables.Pkg.Version)
+
+  var ops string
+  if self.Scope == "cluster" {
+    ops = self.clusterScopeLabelsPatch()
+  } else if self.Scope == "namespace" {
+    ops = self.nsScopeLabelsPatch()
+  }
 
   patch, err := tojson.ToJSON([]byte(ops))
   if err != nil {
@@ -77,10 +74,41 @@ patch:
   return nil
 }
 
+func (self *KubeInstall) clusterScopeLabelsPatch() string {
+  ops := fmt.Sprintf(`---
+filters:
+  kind: .*
+type: merge
+patch:
+  metadata:
+    labels:
+      managed-by: carbon
+      carbon/component-name: %s
+      carbon/component-version: %s
+`, self.Variables.Pkg.Name, self.Variables.Pkg.Version)
+  return ops
+}
+
+func (self *KubeInstall) nsScopeLabelsPatch() string {
+  ops := fmt.Sprintf(`---
+filters:
+  kind: .*
+type: merge
+patch:
+  metadata:
+    labels:
+      managed-by: carbon
+      carbon/component-name: %s
+      carbon/component-version: %s
+      carbon/component-namespace: %s
+`, self.Variables.Pkg.Name, self.Variables.Pkg.Version, kubecommon.CurrentNamespace)
+  return ops
+}
+
 func (self *KubeInstall) Apply(defPWL bool) error {
   log.Debug("Applying Kubernetes manifests")
 
-  f, ioStreams := KubeCmdFactory(CurrentNamespace)
+  f, ioStreams := kubecommon.KubeCmdFactory(kubecommon.CurrentNamespace)
 
   cmd := cmdapply.NewCmdApply("kubectl", f, ioStreams)
 
@@ -97,7 +125,13 @@ func (self *KubeInstall) Apply(defPWL bool) error {
   force := true
   o.DeleteFlags.Force = &force
 
-  selector := fmt.Sprintf("carbon/component-name=%s", self.Variables.Pkg.Name)
+  var selector string
+  if self.Scope == "cluster" {
+    selector = fmt.Sprintf("carbon/component-name=%s", self.Variables.Pkg.Name)
+  } else if self.Scope == "namespace" {
+    selector = fmt.Sprintf("carbon/component-name=%s,carbon/component-namespace=%s",
+                           self.Variables.Pkg.Name, kubecommon.CurrentNamespace)
+  }
   o.Selector = selector
 
   if !defPWL {
@@ -111,12 +145,15 @@ func (self *KubeInstall) Apply(defPWL bool) error {
     }
   }
 
-  o.Namespace = CurrentNamespace
-  o.EnforceNamespace = true
-  // if ns != "" {
-  //   o.Namespace = ns
-  //   o.EnforceNamespace = true
-  // }
+  o.Namespace = kubecommon.CurrentNamespace
+  // o.EnforceNamespace = true
+  
+  if self.Scope == "cluster" {
+    o.EnforceNamespace = false
+  } else if self.Scope == "namespace" {
+    o.EnforceNamespace = true
+  }
+  
 
   log.Trace("Final Kubernetes manifests for being applied: ", string(self.BuiltManifest))
 
@@ -140,7 +177,7 @@ func (self *KubeInstall) Apply(defPWL bool) error {
 
 func GetAllResources() ([]string, error) {
 
-  kubeConfig, err := KubeConfig()
+  kubeConfig, err := kubecommon.KubeConfig()
   if err != nil {
     log.Debugf("Failed to discover location of kubeconfig due to the error: %s", err.Error())
     return nil, err

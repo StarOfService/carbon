@@ -13,10 +13,10 @@ import (
   log "github.com/sirupsen/logrus"
 )
 
-func (self *KubeInstall) ProcessPatches(data []byte) error {
+func (self *KubeInstall) ProcessPatches(patchData []byte) error {
   log.Debug("Processing patches")
 
-  patches, err := deserialPatchers(data)
+  patches, err := deserialPatchers(patchData)
   if err != nil {
     return err
   }
@@ -28,11 +28,11 @@ func (self *KubeInstall) ProcessPatches(data []byte) error {
   return nil
 }
 
-func deserialPatchers(data []byte) ([]Patcher, error) {
+func deserialPatchers(patchData []byte) ([]Patcher, error) {
   log.Debug("Deserialzing patch handlers")
 
   var resp []Patcher
-  dec := json.NewDecoder(bytes.NewReader(data))
+  dec := json.NewDecoder(bytes.NewReader(patchData))
   for {
     var ph Patcher
     err := dec.Decode(&ph)
@@ -40,7 +40,7 @@ func deserialPatchers(data []byte) ([]Patcher, error) {
         break
     }
     if err != nil {
-      log.Errorf("Document:\n%s", string(data))
+      log.Errorf("Document:\n%s", string(patchData))
       return nil, errors.Wrap(err, "deserializing patch data")
     }
     resp = append(resp, ph)

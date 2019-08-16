@@ -10,20 +10,20 @@ import (
 const Version string = "v1alpha1"
 
 
-type KubeConfig struct {
+type CarbonConfig struct {
   APIVersion    string     `json:"apiVersion"`
   CarbonScope   string     `json:"carbonScope"`
 }
 
-func NewKubeConfig() vconf.ConfigInterface {
-  return new(KubeConfig)
+func NewCarbonConfig() vconf.ConfigInterface {
+  return new(CarbonConfig)
 }
 
-func (c *KubeConfig) GetVersion() string {
+func (c *CarbonConfig) GetVersion() string {
   return c.APIVersion
 }
 
-func (c *KubeConfig) Parse(data []byte) error {
+func (c *CarbonConfig) Parse(data []byte) error {
   if err := json.Unmarshal(data, c); err != nil {
     return err
   }
@@ -31,6 +31,6 @@ func (c *KubeConfig) Parse(data []byte) error {
   return nil
 }
 
-func (c *KubeConfig) Upgrade() (vconf.ConfigInterface, error) {
+func (c *CarbonConfig) Upgrade() (vconf.ConfigInterface, error) {
   return nil, errors.New("not implemented yet")
 }

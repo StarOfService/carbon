@@ -13,6 +13,7 @@ import (
   dockerbuild "github.com/starofservice/carbon/pkg/docker/build"
   "github.com/starofservice/carbon/pkg/kubernetes"
   "github.com/starofservice/carbon/pkg/minikube"
+  "github.com/starofservice/carbon/pkg/schema/carboncfg"
   "github.com/starofservice/carbon/pkg/schema/pkgcfg"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
 )
@@ -112,7 +113,7 @@ func runBuild() error {
 
   meta := pkgmeta.New(cfg, cfgBody, kubeManif)
 
-  kd, err := kubernetes.NewKubeInstall(meta, "image", "tag")
+  kd, err := kubernetes.NewKubeInstall(meta, carboncfg.New(), "image", "tag")
   if err != nil {
     return errors.Wrap(err, "creating new instance of KubeInstall")
   }

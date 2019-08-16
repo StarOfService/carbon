@@ -10,7 +10,7 @@ import (
   apicorev1 "k8s.io/api/core/v1"
   metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-  "github.com/starofservice/carbon/pkg/kubernetes"
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
   "github.com/starofservice/carbon/pkg/schema/carboncfg"
   // "github.com/starofservice/carbon/pkg/test"
 )
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
     //   log.Error("Failed to start Minikube due ot the error: ", err.Error())
     // }
 
-    err := kubernetes.SetNamespace("")
+    err := kubecommon.SetNamespace("")
     if err != nil {
       log.Error("Failed to set current namespace due to the error ", err.Error())
       return
@@ -40,17 +40,17 @@ func TestCarboncfgWithoutConfig(t *testing.T) {
     return
   }
 
-  assert.Equal(t, mns, kubernetes.GlobalCarbonNamespace, "they should be equal")
+  assert.Equal(t, mns, kubecommon.GlobalCarbonNamespace, "they should be equal")
 }
 
 func TestCarboncfgGlobalConfig(t *testing.T) {
   config := `{"apiVersion": "v1alpha1", "carbonScope": "namespace"}`
-  err := createCarbonConfig(kubernetes.GlobalCarbonNamespace, config)
+  err := createCarbonConfig(kubecommon.GlobalCarbonNamespace, config)
   if err != nil {
     t.Errorf("Failed to create Kubernetes Carbon config due to the error %s", err.Error())
     return
   }
-  defer deleteCarbonConfig(t, kubernetes.GlobalCarbonNamespace)
+  defer deleteCarbonConfig(t, kubecommon.GlobalCarbonNamespace)
 
   mns, err := carboncfg.MetaNamespace()
   if err != nil {
@@ -58,25 +58,25 @@ func TestCarboncfgGlobalConfig(t *testing.T) {
     return
   }
 
-  assert.Equal(t, mns, kubernetes.CurrentNamespace, "they should be equal")
+  assert.Equal(t, mns, kubecommon.CurrentNamespace, "they should be equal")
 }
 
 func TestCarboncfgGlobalAndLocalConfig(t *testing.T) {
   config := `{"apiVersion": "v1alpha1", "carbonScope": "cluster"}`
-  err := createCarbonConfig(kubernetes.GlobalCarbonNamespace, config)
+  err := createCarbonConfig(kubecommon.GlobalCarbonNamespace, config)
   if err != nil {
     t.Errorf("Failed to create Kubernetes Carbon config due to the error %s", err.Error())
     return
   }
-  defer deleteCarbonConfig(t, kubernetes.GlobalCarbonNamespace)
+  defer deleteCarbonConfig(t, kubecommon.GlobalCarbonNamespace)
 
   config = `{"apiVersion": "v1alpha1", "carbonScope": "namespace"}`
-  err = createCarbonConfig(kubernetes.CurrentNamespace, config)
+  err = createCarbonConfig(kubecommon.CurrentNamespace, config)
   if err != nil {
     t.Errorf("Failed to create Kubernetes Carbon config due to the error %s", err.Error())
     return
   }
-  defer deleteCarbonConfig(t, kubernetes.CurrentNamespace)
+  defer deleteCarbonConfig(t, kubecommon.CurrentNamespace)
 
   mns, err := carboncfg.MetaNamespace()
   if err != nil {
@@ -84,11 +84,11 @@ func TestCarboncfgGlobalAndLocalConfig(t *testing.T) {
     return
   }
 
-  assert.Equal(t, mns, kubernetes.CurrentNamespace, "they should be equal")
+  assert.Equal(t, mns, kubecommon.CurrentNamespace, "they should be equal")
 }
 
 func createCarbonConfig(ns, data string) error {
-  cmh, err := kubernetes.GetConfigMapHandler(ns)
+  cmh, err := kubecommon.GetConfigMapHandler(ns)
   if err != nil {
     return errors.Wrap(err, "getting ConfigMap handler")
   }
@@ -109,7 +109,7 @@ func createCarbonConfig(ns, data string) error {
 }
 
 func deleteCarbonConfig(t *testing.T, ns string) {
-  cmh, err := kubernetes.GetConfigMapHandler(ns)
+  cmh, err := kubecommon.GetConfigMapHandler(ns)
   if err != nil {
     t.Errorf("Failed to get ConfigMap handler due to the error %s", err.Error())
     return

@@ -12,6 +12,7 @@ import (
   "github.com/starofservice/vconf"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
   "github.com/starofservice/carbon/pkg/schema/carboncfg"
   "github.com/starofservice/carbon/pkg/schema/kubemeta/latest"
 )
@@ -68,7 +69,7 @@ func IsInstalled(name string) (bool, error) {
 func (self *Handler) Delete() error {
   log.Debug("Deleting Carbon meatadata for package ", self.Data.Name)
 
-  secretHandler, err := kubernetes.GetSecretHandler(self.Namespace)
+  secretHandler, err := kubecommon.GetSecretHandler(self.Namespace)
   if err != nil {
     return err
   }
@@ -88,7 +89,7 @@ func Get(name string) (*Handler, error) {
     return nil, err
   }
 
-  secretHandler, err := kubernetes.GetSecretHandler(mns)
+  secretHandler, err := kubecommon.GetSecretHandler(mns)
   if err != nil {
     return nil, err
   }
@@ -165,7 +166,7 @@ func New(kd *kubernetes.KubeInstall, patches []byte) (*Handler, error) {
       Source: source,
       Variables: kd.Variables.Var,
       Patches: string(patches),
-      Namespace: kubernetes.CurrentNamespace,
+      Namespace: kubecommon.CurrentNamespace,
       Manifest: string(kd.BuiltManifest),
     },
     Namespace: mns,
@@ -178,16 +179,16 @@ func (self *Handler) Apply() error {
     return err
   }
 
-  if mns == kubernetes.GlobalCarbonNamespace {
-    nsExists, err := kubernetes.CheckCarbonNamespace(kubernetes.GlobalCarbonNamespace)
+  if mns == kubecommon.GlobalCarbonNamespace {
+    nsExists, err := kubecommon.CheckCarbonNamespace(kubecommon.GlobalCarbonNamespace)
     if err != nil {
-      return errors.Wrapf(err, "looking for '%s' namespace", kubernetes.GlobalCarbonNamespace)
+      return errors.Wrapf(err, "looking for '%s' namespace", kubecommon.GlobalCarbonNamespace)
     }
 
     if !nsExists {
-      err = kubernetes.CreateGlobalCarbonNamespace()
+      err = kubecommon.CreateGlobalCarbonNamespace()
       if err != nil {
-        return errors.Wrapf(err, "creating '%s' namespace", kubernetes.GlobalCarbonNamespace)
+        return errors.Wrapf(err, "creating '%s' namespace", kubecommon.GlobalCarbonNamespace)
       }
     }
   }
@@ -206,7 +207,7 @@ func (self *Handler) Apply() error {
     Data: map[string][]byte{metaObjectKey: data},
   }
 
-  secretHandler, err := kubernetes.GetSecretHandler(self.Namespace)
+  secretHandler, err := kubecommon.GetSecretHandler(self.Namespace)
   if err != nil {
     return err
   }
@@ -232,7 +233,7 @@ func (self *Handler) Apply() error {
 }
 
 func getAllSecrets(ns string) (*apicorev1.SecretList, error) {
-  secretHandler, err := kubernetes.GetSecretHandler(ns)
+  secretHandler, err := kubecommon.GetSecretHandler(ns)
   if err != nil {
     return nil, err
   }

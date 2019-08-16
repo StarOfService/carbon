@@ -10,6 +10,7 @@ import (
   dockermeta "github.com/starofservice/carbon/pkg/docker/metadata"
   "github.com/starofservice/carbon/pkg/homecfg"
   "github.com/starofservice/carbon/pkg/kubernetes"
+  "github.com/starofservice/carbon/pkg/schema/carboncfg"
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
   "github.com/starofservice/carbon/pkg/schema/pkgmeta"
   "github.com/starofservice/carbon/pkg/util/tojson"
@@ -80,7 +81,12 @@ func runInstall(image string) error {
     return errors.Wrap(err, "deserializing Carbon metadata from the Docker image")
   }
 
-  kinstall, err := kubernetes.NewKubeInstall(pmeta, dm.Name(), dm.Tag())
+  carbonCfg, err := carboncfg.FindAndParseConfig()
+  if err != nil {
+    return errors.Wrap(err, "getting Carbon config")
+  }
+
+  kinstall, err := kubernetes.NewKubeInstall(pmeta, carbonCfg, dm.Name(), dm.Tag())
   if err != nil {
     return errors.Wrap(err, "creating new KubeInstall instance")
   }
@@ -97,8 +103,12 @@ func runInstall(image string) error {
     return errors.Wrap(err, "applying provided patches for Kubernetes resources")
   }
 
-  if err = kinstall.SetAppLabel(); err != nil {
+  if err = kinstall.SetAppLabels(); err != nil {
     return errors.Wrap(err, "applying Carbon labels for Kubernetes resources")
+  }
+
+  if err = kinstall.SetNamespace(); err != nil {
+    return errors.Wrap(err, "applying Carbon scope-based namespace for Kubernetes resources")
   }
 
   log.Info("Applying kubernetes configuration")

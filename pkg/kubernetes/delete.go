@@ -4,12 +4,13 @@ import (
   "github.com/rhysd/go-fakeio"
   log "github.com/sirupsen/logrus"
   cmddelete "k8s.io/kubernetes/pkg/kubectl/cmd/delete"
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
 )
 
 func Delete(manifest, ns string) error {
   log.Debug("Deleting Kubernetes manifests")
 
-  f, ioStreams := KubeCmdFactory(ns)
+  f, ioStreams := kubecommon.KubeCmdFactory(ns)
 
   cmd := cmddelete.NewCmdDelete(f, ioStreams)
 

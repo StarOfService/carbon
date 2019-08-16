@@ -8,6 +8,7 @@ import (
   "github.com/stretchr/testify/assert"
 
   "github.com/starofservice/carbon/pkg/kubernetes"
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
   "github.com/starofservice/carbon/pkg/schema/kubemeta"
   // "github.com/starofservice/carbon/pkg/test"
 )
@@ -21,7 +22,7 @@ func TestMain(m *testing.M) {
     //   log.Error("Failed to start Minikube due ot the error: ", err.Error())
     // }
 
-    err := kubernetes.SetNamespace("")
+    err := kubecommon.SetNamespace("")
     if err != nil {
       log.Errorf("Failed to set current namespace due to the error %s", err.Error())
     }

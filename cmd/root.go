@@ -5,7 +5,7 @@ import (
   "github.com/spf13/cobra"
 
   "github.com/starofservice/carbon/pkg/homecfg"
-  "github.com/starofservice/carbon/pkg/kubernetes"
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
   "github.com/starofservice/carbon/pkg/minikube"
 )
 
@@ -59,7 +59,7 @@ More details can be found here: https://github.com/StarOfService/carbon`,
       }
     }
 
-    kubernetes.SetNamespace(namespace)
+    kubecommon.SetNamespace(namespace)
 
     err := homecfg.InitHomeConfig()
     if err != nil {
@@ -77,5 +77,5 @@ func Execute() {
 func init() {
   RootCmd.PersistentFlags().StringVarP(&logLevel, "log-level", "l", "info", "Set the logging level ('trace'|'debug'|'info'|'warn'|'error'|'fatal') (default 'info')")
   RootCmd.PersistentFlags().BoolVarP(&rootMinikube, "minikube", "m", false, "Use the local Minikube instance instead of remote repositories and Kubernetes clusters. May be useful for local development process. Disabled by default.")
-  RootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "", "If present, defineds the Kubernetes namespace scope for the deployed resources and Carbon metadata")
+  RootCmd.PersistentFlags().StringVarP(&namespace, "namespace", "n", "default", "If present, defineds a default Kubernetes namespace for installed resources. The behaviour of this parameter depends on the used Carbon scope")
 }

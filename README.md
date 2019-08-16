@@ -47,6 +47,8 @@ TODO: code style
 - `carbon verify` - verify Carbon package configuration before running `carbon build`
 - `carbon config-upgrade` - upgrade a package config to the latest version
 - version constraints and dependencies - provide a possibility to define dependencies among Carbon packages and to install a package only when all version constraints are met
+- Remove resources from all namespaces when they are (re)moved with Cluster Carbon scope mode
+- smooth migration between Cluster and Namespace Carbon scopes
 
 ## Community
 TODO

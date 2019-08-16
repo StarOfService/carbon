@@ -8,7 +8,7 @@ import (
   log "github.com/sirupsen/logrus"
   "github.com/starofservice/vconf"
 
-  "github.com/starofservice/carbon/pkg/kubernetes"
+  kubecommon "github.com/starofservice/carbon/pkg/kubernetes/common"
   "github.com/starofservice/carbon/pkg/schema/carboncfg/latest"
   "github.com/starofservice/carbon/pkg/util/tojson"
 )
@@ -20,7 +20,7 @@ const (
 )
 
 var schemaVersions = map[string]func() vconf.ConfigInterface{
-  latest.Version: latest.NewKubeConfig,
+  latest.Version: latest.NewCarbonConfig,
 }
 
 func GetCurrentVersion(data []byte) (string, error) {
@@ -34,23 +34,23 @@ func GetCurrentVersion(data []byte) (string, error) {
   return version.APIVersion, nil
 }
 
-type KubeConfig struct {
-  Data latest.KubeConfig
+type CarbonConfig struct {
+  Data latest.CarbonConfig
 }
 
-func New() *KubeConfig {
-  return &KubeConfig{
-    Data: latest.KubeConfig{
+func New() *CarbonConfig {
+  return &CarbonConfig{
+    Data: latest.CarbonConfig{
       APIVersion: latest.Version,
       CarbonScope: defaultCarbonScope,
     },
   }
 }
 
-func parseConfig(ns string) (*KubeConfig, error) {
+func parseConfig(ns string) (*CarbonConfig, error) {
   log.Debug("Reading Kubernetes config")
 
-  cmHandler, err := kubernetes.GetConfigMapHandler(ns)
+  cmHandler, err := kubecommon.GetConfigMapHandler(ns)
   if err != nil {
     return nil, err
   }
@@ -81,31 +81,31 @@ func parseConfig(ns string) (*KubeConfig, error) {
     return nil, err
   }
 
-  parsedCfg := cfg.(*latest.KubeConfig)
-  pc := &KubeConfig{
+  parsedCfg := cfg.(*latest.CarbonConfig)
+  pc := &CarbonConfig{
     Data: *parsedCfg,
   }
   return pc, nil
 }
 
-func FindAndParseConfig() (*KubeConfig, error)  {
+func FindAndParseConfig() (*CarbonConfig, error)  {
 
   configNamespace := ""
-  cmExists, err := configCMExists(kubernetes.CurrentNamespace)
+  cmExists, err := configCMExists(kubecommon.CurrentNamespace)
   if err != nil {
-    return nil, errors.Wrapf(err, "checking ConfigMap with carbon config at '%s' namespace", kubernetes.CurrentNamespace)
+    return nil, errors.Wrapf(err, "checking ConfigMap with carbon config at '%s' namespace", kubecommon.CurrentNamespace)
   }
   if cmExists {
-    configNamespace = kubernetes.CurrentNamespace
+    configNamespace = kubecommon.CurrentNamespace
   }
 
   if configNamespace == "" {
-    cmExists, err = configCMExists(kubernetes.GlobalCarbonNamespace)
+    cmExists, err = configCMExists(kubecommon.GlobalCarbonNamespace)
     if err != nil {
-      return nil, errors.Wrapf(err, "checking ConfigMap with carbon config at '%s' namespace", kubernetes.GlobalCarbonNamespace)
+      return nil, errors.Wrapf(err, "checking ConfigMap with carbon config at '%s' namespace", kubecommon.GlobalCarbonNamespace)
     }
     if cmExists {
-      configNamespace = kubernetes.GlobalCarbonNamespace
+      configNamespace = kubecommon.GlobalCarbonNamespace
     }
   }
 
@@ -118,7 +118,7 @@ func FindAndParseConfig() (*KubeConfig, error)  {
 
 
 func configCMExists(ns string) (bool, error) {
-  nsExists, err := kubernetes.CheckCarbonNamespace(ns)
+  nsExists, err := kubecommon.CheckCarbonNamespace(ns)
   if err != nil {
     return false, errors.Wrapf(err, "checking '%s' namespace from the context", ns)
   }
@@ -126,7 +126,7 @@ func configCMExists(ns string) (bool, error) {
     return false, nil
   }
 
-  cmHandler, err := kubernetes.GetConfigMapHandler(ns)
+  cmHandler, err := kubecommon.GetConfigMapHandler(ns)
   if err != nil {
     return false, err
   }
@@ -142,30 +142,30 @@ func configCMExists(ns string) (bool, error) {
   return cmExists, nil
 }
 
-func carbonScope() (string, error) {
+func (self *CarbonConfig) CarbonScope() (string, error) {
+  if self.Data.CarbonScope == "" {
+    return defaultCarbonScope, nil
+  }
+
+  if self.Data.CarbonScope != "cluster" && self.Data.CarbonScope != "namespace" {
+    return "", errors.Errorf("Unknown carbonScope value '%s' at the Kubernetes config", self.Data.CarbonScope)
+  }
+
+  return self.Data.CarbonScope, nil
+}
+
+func MetaNamespace() (string, error) {
   kcfg, err := FindAndParseConfig()
   if err != nil {
     return "", errors.Wrap(err, "getting Carbon config for Kubernetes cluster")
   }
 
-  if kcfg.Data.CarbonScope == "" {
-    return defaultCarbonScope, nil
-  }
-
-  if kcfg.Data.CarbonScope != "cluster" && kcfg.Data.CarbonScope != "namespace" {
-    return "", errors.Errorf("Unknown carbonScope value '%s' at the Kubernetes config", kcfg.Data.CarbonScope)
-  }
-
-  return kcfg.Data.CarbonScope, nil
-}
-
-func MetaNamespace() (string, error) {
-  scope, err := carbonScope()
+  scope, err := kcfg.CarbonScope()
   if err != nil {
     return "", err
   }
   if scope == "cluster" {
-    return kubernetes.GlobalCarbonNamespace, nil
+    return kubecommon.GlobalCarbonNamespace, nil
   }
-  return kubernetes.CurrentNamespace, nil
+  return kubecommon.CurrentNamespace, nil
 }
