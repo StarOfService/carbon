@@ -4,7 +4,7 @@ Carbon config allows configuring some aspects of the Carbon behavior. Currently,
 Parameter     | Required | Default value  | Description
 --------------|----------|----------------|------------
 apiVersion    | true     |                | version of the config format. The latest version is `v1alpha1`
-scope         | false    | cluster        | this parameter defines the scope of the Carbon metadata. Allowed values are: `cluster` and `namespace`.
+carbonScope   | false    | cluster        | this parameter defines the scope of the Carbon metadata. Allowed values are: `cluster` and `namespace`.
 
 Carbon config can be defined in multiple places:
 1. `carbon-data` namespace
