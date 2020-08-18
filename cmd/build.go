@@ -132,7 +132,7 @@ func runBuild() error {
   if err != nil {
     return errors.Wrap(err, "creating Docker build handler")
   }
-  
+
   if err = dockerBuild.ProcessTags(BuildTags); err != nil {
     return errors.Wrap(err, "processing tags")
   }

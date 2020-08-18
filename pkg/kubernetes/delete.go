@@ -14,7 +14,9 @@ func Delete(manifest, ns string) error {
 
   cmd := cmddelete.NewCmdDelete(f, ioStreams)
 
+  // https://github.com/kubernetes/kubernetes/blob/v1.13.1/pkg/kubectl/cmd/delete/delete_flags.go#L30-L44
   o := cmddelete.DeleteOptions{IOStreams: ioStreams}
+  o.Cascade = true
   o.FilenameOptions.Filenames = []string{"-"}
   o.IgnoreNotFound = true
 

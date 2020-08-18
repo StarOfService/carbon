@@ -147,13 +147,12 @@ func (self *KubeInstall) Apply(defPWL bool) error {
 
   o.Namespace = kubecommon.CurrentNamespace
   // o.EnforceNamespace = true
-  
+
   if self.Scope == "cluster" {
     o.EnforceNamespace = false
   } else if self.Scope == "namespace" {
     o.EnforceNamespace = true
   }
-  
 
   log.Trace("Final Kubernetes manifests for being applied: ", string(self.BuiltManifest))
 
