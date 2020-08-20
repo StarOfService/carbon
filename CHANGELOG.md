@@ -1,5 +1,8 @@
 # Carbon changelog
 
+## 0.0.7
+* Provide possibility to overwrite package name on build stage
+
 ## 0.0.6
 * 'carbon uninstall' has to delete all underlying resources (enable cascade deletion)
 
