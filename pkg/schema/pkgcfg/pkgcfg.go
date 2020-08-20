@@ -38,7 +38,7 @@ type CarbonConfig struct {
   Data latest.CarbonConfig
 }
 
-func ParseConfig(dir string, data []byte, vpref, vsuf string) (*CarbonConfig, error) {
+func ParseConfig(dir string, data []byte, argName, argVPref, argVSuf string) (*CarbonConfig, error) {
   log.Debug("Processing Carbon config")
 
   jsonData, err := tojson.ToJSON(data)
@@ -63,7 +63,10 @@ func ParseConfig(dir string, data []byte, vpref, vsuf string) (*CarbonConfig, er
 
   parsedCfg := cfg.(*latest.CarbonConfig)
 
-  parsedCfg.Version = vpref + parsedCfg.Version + vsuf
+  if argName != "" {
+    parsedCfg.Name = argName
+  }
+  parsedCfg.Version = argVPref + parsedCfg.Version + argVSuf
 
   pc := &CarbonConfig{
     Cwd: dir,

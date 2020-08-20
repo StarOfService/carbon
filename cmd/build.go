@@ -19,6 +19,7 @@ import (
 )
 
 var BuildConfig string
+var BuildName string
 var BuildPush bool
 var BuildRemove bool
 var BuildTags []string
@@ -58,6 +59,7 @@ func init() {
   buildCmd.Flags().BoolVar(&BuildPush, "push", false, "Push built images to the repositories (disabled by default)")
   buildCmd.Flags().BoolVar(&BuildRemove, "rm", false, "Remove build images after the push operation (disabled by default)")
   buildCmd.Flags().StringArrayVar(&BuildTags, "tag", []string{}, "Name and optionally a tag in the 'name:tag' format. If tag isn't provided, it will be replaced by the component version from carbon.yaml")
+  buildCmd.Flags().StringVar(&BuildName, "name", "", "Override Carbon package name")
   buildCmd.Flags().StringVar(&BuildVersionPrefix, "version-prefix", "", "Prefix which should be added for Carbon package version")
   buildCmd.Flags().StringVar(&BuildVersionSuffix, "version-suffix", "", "Suffix which should be added for Carbon package version")
 
@@ -94,7 +96,7 @@ func runBuild() error {
     return errors.Wrap(err, "reading Carbon config")
   }
 
-  cfg, err := pkgcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody, BuildVersionPrefix, BuildVersionSuffix)
+  cfg, err := pkgcfg.ParseConfig(filepath.Dir(cfgPath), cfgBody, BuildName, BuildVersionPrefix, BuildVersionSuffix)
   if err != nil {
     return errors.Wrap(err, "parsing Carbon config")
   }
