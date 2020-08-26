@@ -1,5 +1,8 @@
 # Carbon changelog
 
+## 0.0.8
+* Add exception handlers for `push` and `remove` build actions
+
 ## 0.0.7
 * Provide possibility to overwrite package name on build stage
 

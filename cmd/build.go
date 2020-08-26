@@ -158,12 +158,16 @@ func runBuild() error {
 
   if BuildPush {
     log.Info("Pushing built Docker images")
-    dockerBuild.Push()
+    if err = dockerBuild.Push(); err != nil {
+      return err
+    }
   }
 
   if BuildRemove {
     log.Info("Removing built images")
-    dockerBuild.Remove()
+    if err = dockerBuild.Remove(); err != nil {
+      return err
+    }
   }
 
   log.Info("Carbon package has been built successfully")
