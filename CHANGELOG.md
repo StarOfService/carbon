@@ -1,5 +1,8 @@
 # Carbon changelog
 
+## 0.0.9
+* Skip `ExternalMetricValueList` resource during a `purge` installation step
+
 ## 0.0.8
 * Add exception handlers for `push` and `remove` build actions
 

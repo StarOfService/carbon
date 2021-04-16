@@ -244,6 +244,7 @@ func skipResource(res string) bool {
     "DeploymentRollback",
     "Event",
     "Eviction",
+    "ExternalMetricValueList",
     "LocalSubjectAccessReview",
     "NodeProxyOptions",
     "PodAttachOptions",
