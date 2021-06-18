@@ -681,9 +681,11 @@ func (m *PersistentVolume) Reset()                    { *m = PersistentVolume{} 
 func (*PersistentVolume) ProtoMessage()               {}
 func (*PersistentVolume) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{100} }
 
-func (m *PersistentVolumeClaim) Reset()                    { *m = PersistentVolumeClaim{} }
-func (*PersistentVolumeClaim) ProtoMessage()               {}
-func (*PersistentVolumeClaim) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{101} }
+func (m *PersistentVolumeClaim) Reset()      { *m = PersistentVolumeClaim{} }
+func (*PersistentVolumeClaim) ProtoMessage() {}
+func (*PersistentVolumeClaim) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{101}
+}
 
 func (m *PersistentVolumeClaimCondition) Reset()      { *m = PersistentVolumeClaimCondition{} }
 func (*PersistentVolumeClaimCondition) ProtoMessage() {}
@@ -785,9 +787,11 @@ func (m *PodLogOptions) Reset()                    { *m = PodLogOptions{} }
 func (*PodLogOptions) ProtoMessage()               {}
 func (*PodLogOptions) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{122} }
 
-func (m *PodPortForwardOptions) Reset()                    { *m = PodPortForwardOptions{} }
-func (*PodPortForwardOptions) ProtoMessage()               {}
-func (*PodPortForwardOptions) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{123} }
+func (m *PodPortForwardOptions) Reset()      { *m = PodPortForwardOptions{} }
+func (*PodPortForwardOptions) ProtoMessage() {}
+func (*PodPortForwardOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{123}
+}
 
 func (m *PodProxyOptions) Reset()                    { *m = PodProxyOptions{} }
 func (*PodProxyOptions) ProtoMessage()               {}
@@ -851,9 +855,11 @@ func (m *Probe) Reset()                    { *m = Probe{} }
 func (*Probe) ProtoMessage()               {}
 func (*Probe) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{138} }
 
-func (m *ProjectedVolumeSource) Reset()                    { *m = ProjectedVolumeSource{} }
-func (*ProjectedVolumeSource) ProtoMessage()               {}
-func (*ProjectedVolumeSource) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{139} }
+func (m *ProjectedVolumeSource) Reset()      { *m = ProjectedVolumeSource{} }
+func (*ProjectedVolumeSource) ProtoMessage() {}
+func (*ProjectedVolumeSource) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{139}
+}
 
 func (m *QuobyteVolumeSource) Reset()                    { *m = QuobyteVolumeSource{} }
 func (*QuobyteVolumeSource) ProtoMessage()               {}
@@ -873,9 +879,11 @@ func (m *RangeAllocation) Reset()                    { *m = RangeAllocation{} }
 func (*RangeAllocation) ProtoMessage()               {}
 func (*RangeAllocation) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{143} }
 
-func (m *ReplicationController) Reset()                    { *m = ReplicationController{} }
-func (*ReplicationController) ProtoMessage()               {}
-func (*ReplicationController) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{144} }
+func (m *ReplicationController) Reset()      { *m = ReplicationController{} }
+func (*ReplicationController) ProtoMessage() {}
+func (*ReplicationController) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{144}
+}
 
 func (m *ReplicationControllerCondition) Reset()      { *m = ReplicationControllerCondition{} }
 func (*ReplicationControllerCondition) ProtoMessage() {}
@@ -901,9 +909,11 @@ func (*ReplicationControllerStatus) Descriptor() ([]byte, []int) {
 	return fileDescriptorGenerated, []int{148}
 }
 
-func (m *ResourceFieldSelector) Reset()                    { *m = ResourceFieldSelector{} }
-func (*ResourceFieldSelector) ProtoMessage()               {}
-func (*ResourceFieldSelector) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{149} }
+func (m *ResourceFieldSelector) Reset()      { *m = ResourceFieldSelector{} }
+func (*ResourceFieldSelector) ProtoMessage() {}
+func (*ResourceFieldSelector) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{149}
+}
 
 func (m *ResourceQuota) Reset()                    { *m = ResourceQuota{} }
 func (*ResourceQuota) ProtoMessage()               {}
@@ -1023,9 +1033,11 @@ func (m *ServiceStatus) Reset()                    { *m = ServiceStatus{} }
 func (*ServiceStatus) ProtoMessage()               {}
 func (*ServiceStatus) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{177} }
 
-func (m *SessionAffinityConfig) Reset()                    { *m = SessionAffinityConfig{} }
-func (*SessionAffinityConfig) ProtoMessage()               {}
-func (*SessionAffinityConfig) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{178} }
+func (m *SessionAffinityConfig) Reset()      { *m = SessionAffinityConfig{} }
+func (*SessionAffinityConfig) ProtoMessage() {}
+func (*SessionAffinityConfig) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{178}
+}
 
 func (m *StorageOSPersistentVolumeSource) Reset()      { *m = StorageOSPersistentVolumeSource{} }
 func (*StorageOSPersistentVolumeSource) ProtoMessage() {}
@@ -1033,9 +1045,11 @@ func (*StorageOSPersistentVolumeSource) Descriptor() ([]byte, []int) {
 	return fileDescriptorGenerated, []int{179}
 }
 
-func (m *StorageOSVolumeSource) Reset()                    { *m = StorageOSVolumeSource{} }
-func (*StorageOSVolumeSource) ProtoMessage()               {}
-func (*StorageOSVolumeSource) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{180} }
+func (m *StorageOSVolumeSource) Reset()      { *m = StorageOSVolumeSource{} }
+func (*StorageOSVolumeSource) ProtoMessage() {}
+func (*StorageOSVolumeSource) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{180}
+}
 
 func (m *Sysctl) Reset()                    { *m = Sysctl{} }
 func (*Sysctl) ProtoMessage()               {}

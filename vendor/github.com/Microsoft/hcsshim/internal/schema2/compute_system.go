@@ -10,7 +10,6 @@
 package hcsschema
 
 type ComputeSystem struct {
-
 	Owner string `json:"Owner,omitempty"`
 
 	SchemaVersion *Version `json:"SchemaVersion,omitempty"`
