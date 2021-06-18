@@ -137,9 +137,11 @@ func (m *DaemonSetStatus) Reset()                    { *m = DaemonSetStatus{} }
 func (*DaemonSetStatus) ProtoMessage()               {}
 func (*DaemonSetStatus) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{6} }
 
-func (m *DaemonSetUpdateStrategy) Reset()                    { *m = DaemonSetUpdateStrategy{} }
-func (*DaemonSetUpdateStrategy) ProtoMessage()               {}
-func (*DaemonSetUpdateStrategy) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{7} }
+func (m *DaemonSetUpdateStrategy) Reset()      { *m = DaemonSetUpdateStrategy{} }
+func (*DaemonSetUpdateStrategy) ProtoMessage() {}
+func (*DaemonSetUpdateStrategy) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{7}
+}
 
 func (m *Deployment) Reset()                    { *m = Deployment{} }
 func (*Deployment) ProtoMessage()               {}
@@ -169,9 +171,11 @@ func (m *DeploymentStrategy) Reset()                    { *m = DeploymentStrateg
 func (*DeploymentStrategy) ProtoMessage()               {}
 func (*DeploymentStrategy) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{14} }
 
-func (m *FSGroupStrategyOptions) Reset()                    { *m = FSGroupStrategyOptions{} }
-func (*FSGroupStrategyOptions) ProtoMessage()               {}
-func (*FSGroupStrategyOptions) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{15} }
+func (m *FSGroupStrategyOptions) Reset()      { *m = FSGroupStrategyOptions{} }
+func (*FSGroupStrategyOptions) ProtoMessage() {}
+func (*FSGroupStrategyOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{15}
+}
 
 func (m *HTTPIngressPath) Reset()                    { *m = HTTPIngressPath{} }
 func (*HTTPIngressPath) ProtoMessage()               {}
@@ -299,9 +303,11 @@ func (m *RollbackConfig) Reset()                    { *m = RollbackConfig{} }
 func (*RollbackConfig) ProtoMessage()               {}
 func (*RollbackConfig) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{45} }
 
-func (m *RollingUpdateDaemonSet) Reset()                    { *m = RollingUpdateDaemonSet{} }
-func (*RollingUpdateDaemonSet) ProtoMessage()               {}
-func (*RollingUpdateDaemonSet) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{46} }
+func (m *RollingUpdateDaemonSet) Reset()      { *m = RollingUpdateDaemonSet{} }
+func (*RollingUpdateDaemonSet) ProtoMessage() {}
+func (*RollingUpdateDaemonSet) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{46}
+}
 
 func (m *RollingUpdateDeployment) Reset()      { *m = RollingUpdateDeployment{} }
 func (*RollingUpdateDeployment) ProtoMessage() {}
@@ -321,9 +327,11 @@ func (*RunAsUserStrategyOptions) Descriptor() ([]byte, []int) {
 	return fileDescriptorGenerated, []int{49}
 }
 
-func (m *SELinuxStrategyOptions) Reset()                    { *m = SELinuxStrategyOptions{} }
-func (*SELinuxStrategyOptions) ProtoMessage()               {}
-func (*SELinuxStrategyOptions) Descriptor() ([]byte, []int) { return fileDescriptorGenerated, []int{50} }
+func (m *SELinuxStrategyOptions) Reset()      { *m = SELinuxStrategyOptions{} }
+func (*SELinuxStrategyOptions) ProtoMessage() {}
+func (*SELinuxStrategyOptions) Descriptor() ([]byte, []int) {
+	return fileDescriptorGenerated, []int{50}
+}
 
 func (m *Scale) Reset()                    { *m = Scale{} }
 func (*Scale) ProtoMessage()               {}

@@ -1,5 +1,5 @@
 package defval
 
 const (
-  Dockerfile = "Dockerfile"
+	Dockerfile = "Dockerfile"
 )
