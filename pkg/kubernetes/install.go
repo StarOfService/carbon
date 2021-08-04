@@ -6,6 +6,7 @@ import (
   "strings"
   "text/template"
 
+  "github.com/Masterminds/sprig"
   "github.com/pkg/errors"
   "github.com/rhysd/go-fakeio"
   log "github.com/sirupsen/logrus"
@@ -34,7 +35,7 @@ func (self *KubeInstall) UpdateVars(vars map[string]string) {
 func (self *KubeInstall) Build() error {
   log.Debug("Building Kubernetes manifest based on the template from the package and provided variables")
 
-  tpl, err := template.New("kubeManifest").Option("missingkey=zero").Parse(string(self.RawManifest))
+  tpl, err := template.New("kubeManifest").Option("missingkey=zero").Funcs(sprig.TxtFuncMap()).Parse(string(self.RawManifest))
   if err != nil {
     return errors.Wrap(err, "parsing Kubernetes manifests teamplate")
   }
@@ -258,6 +259,7 @@ func skipResource(res string) bool {
     "SelfSubjectRulesReview",
     "ServiceProxyOptions",
     "SubjectAccessReview",
+    "TokenRequest",
     "TokenReview",
     "VolumeAttachment",
   }

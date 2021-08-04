@@ -1,5 +1,9 @@
 # Carbon changelog
 
+## 0.0.10
+* Skip `TokenRequest` resource during a `purge` installation step
+* Add support for `sprig` functions at Carbon templates
+
 ## 0.0.9
 * Skip `ExternalMetricValueList` resource during a `purge` installation step
 

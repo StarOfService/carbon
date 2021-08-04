@@ -37,6 +37,30 @@
   revision = "e9091a26100e9cfb2b6a8f470085bfa541931a91"
 
 [[projects]]
+  digest = "1:78c26049b7f7e1929b7e378d87c6fa1f31e6f4a60065d5f444602454f050dad7"
+  name = "github.com/Masterminds/goutils"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "f1923532a168b8203bfe956d8cd3b17ebece5982"
+  version = "v1.1.1"
+
+[[projects]]
+  digest = "1:af05bf8fd1b67aec0f66645636d7757570b96f58aaa020754b5daf56e84fccde"
+  name = "github.com/Masterminds/semver"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "7bb0c843b53d6ad21a3f619cb22c4b442bb3ef3e"
+  version = "v3.1.1"
+
+[[projects]]
+  digest = "1:b9d22e4c6acf0194e00a698d563ad3bacb8d8dab1d73f494517810bf92e029c5"
+  name = "github.com/Masterminds/sprig"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "e4c0945838d570720d876a6ad9b4568ed32317b4"
+  version = "v2.22.0"
+
+[[projects]]
   digest = "1:b1147cdc28346f1b7bf4ce8464a3bb6d54d6ce4724f1ab0da56ecb476b1bff11"
   name = "github.com/Microsoft/go-winio"
   packages = [
@@ -490,6 +514,14 @@
   revision = "24818f796faf91cd76ec7bddd72458fbced7a6c1"
 
 [[projects]]
+  digest = "1:a460e33e133d85d481c83cbf15e83057b71278a2b53a5506cb60d2ec621249d5"
+  name = "github.com/google/uuid"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "44b5fee7c49cf3bcdf723f106b36d56ef13ccc88"
+  version = "v1.3.0"
+
+[[projects]]
   digest = "1:06a7dadb7b760767341ffb6c8d377238d68a1226f2b21b5d497d2e3f6ecf6b4e"
   name = "github.com/googleapis/gnostic"
   packages = [
@@ -538,6 +570,14 @@
   pruneopts = "NUT"
   revision = "20f1fb78b0740ba8c3cb143a61e86ba5c8669768"
   version = "v0.5.0"
+
+[[projects]]
+  digest = "1:6cf825d1c939d372f6549e4aeafcb28137883d6c7ce9cf4f0746dc4cf5c944b2"
+  name = "github.com/huandu/xstrings"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "52197b1fb3155666d9613b4eb4ed72a86d1f8ab6"
+  version = "v1.3.2"
 
 [[projects]]
   digest = "1:9a52adf44086cead3b384e5d0dbf7a1c1cce65e67552ee3383a8561c42a18cd3"
@@ -656,12 +696,28 @@
   version = "v2.1.1"
 
 [[projects]]
+  digest = "1:556220cab08a1853bab93ab36f3747cd42106938b3594edff42de52e2d6d2ec4"
+  name = "github.com/mitchellh/copystructure"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "d4ce1f938f7a7ea2a40bff4544b56be9c00b5e84"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:9f63926f52745d1f9d6053f8fbbb3bd3983c2c97c0565957e682b8d2f7aad3af"
   name = "github.com/mitchellh/go-wordwrap"
   packages = ["."]
   pruneopts = "NUT"
   revision = "9e67c67572bc5dd02aef930e2b0ae3c02a4b5a5c"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:46a492212ef009ef283da15a6b8c6dc8bb0326e07a27104a469c21155988e359"
+  name = "github.com/mitchellh/reflectwalk"
+  packages = ["."]
+  pruneopts = "NUT"
+  revision = "e0c24fdb021963cd2c4013097a0b993a7c4e344f"
+  version = "v1.0.2"
 
 [[projects]]
   digest = "1:2f42fa12d6911c7b7659738758631bec870b7e9b4c6be5444f963cdcfccc191f"
@@ -925,9 +981,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:38f553aff0273ad6f367cb0a0f8b6eecbaef8dc6cb8b50e57b6a81c1d5b1e332"
+  digest = "1:48e235389d8de8623da98cb952a0ec7ac1b6f6663fd2df304156bfe02df009a4"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "pbkdf2",
+    "scrypt",
+    "ssh/terminal",
+  ]
   pruneopts = "NUT"
   revision = "505ab145d0a99da450461ae2c1a9f6cd10d1f447"
 
@@ -1358,6 +1418,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/Jeffail/gabs",
+    "github.com/Masterminds/sprig",
     "github.com/containers/image/transports/alltransports",
     "github.com/containers/image/types",
     "github.com/docker/cli/cli/command/image/build",
