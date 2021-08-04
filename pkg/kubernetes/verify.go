@@ -6,6 +6,7 @@ import (
   "strings"
   "text/template"
 
+  "github.com/Masterminds/sprig"
   "github.com/pkg/errors"
   log "github.com/sirupsen/logrus"
 
@@ -30,12 +31,10 @@ func (self *KubeInstall) VerifyAll(path string) error {
 
 func (self *KubeInstall) VerifyTpl(path string) error {
   log.Tracef("Verifying %s", path)
-  tpl, err := template.ParseFiles(path)
+  tpl, err := template.New(filepath.Base(path)).Option("missingkey=error").Funcs(sprig.TxtFuncMap()).ParseFiles(path)
   if err != nil {
     return errors.Wrapf(err, "parsing Kubernetes manifests template '%s'", path)
   }
-
-  tpl.Option("missingkey=error")
 
   var data bytes.Buffer
   err = tpl.Execute(&data, self.Variables)
